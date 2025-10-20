@@ -6,10 +6,10 @@
 
 global sudoku_grid = [] #grid here
 
-class queue:
-    #used to queue up attempts
+class stack:
+    #used to stack up attempts
     #if a conflict is found in main(),
-        #then the queue is used to restore the previous commit
+        #then the stack is popped to restore the previous commit
     pass
 
 def allowed(x,y,test_num):
@@ -25,6 +25,14 @@ def main():
                     #checked using allowed(column,row,num)
                     #if allowed() is true:
                         #set grid[row][column] as num
-                        #push this commit to queue
+                        #push this commit to stack
 
 main()
+
+
+#Teacher's comments:
+###Graphs: graph traversals (craig n dave) oop as opposed to modules
+###Queues in oop class - to queue up the attempts in backtracking
+###Tkinter or Pyqt for UI
+
+
