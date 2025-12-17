@@ -1,4 +1,4 @@
-def possible(grid,x,y,n):
+def possible(x,y,n):
 
     """
     *CODE BY COMPUTERPHILE ON YOUTUBE, ADAPTED BY HAJAR*
@@ -13,11 +13,11 @@ def possible(grid,x,y,n):
     
     for i in range(0,9):
         if grid[y][i]==n: #if any space in the row already takes on n
-            print("Conflict found in row at: (",y,i,")")
+            print(f"Conflict found in row at: ({y},{i})")
             return False
     for i in range(0,9):
         if grid[i][x]==n: #if any space in the column already takes on n
-            print("Conflict found in column at: (",i,x,")")
+            print(f"Conflict found in column at: ({i},{x})")
             return False
 
     x0=(x//3)*3 #lowest value of x within the same square
@@ -31,7 +31,7 @@ def possible(grid,x,y,n):
     print("No conflicts found!")
     return True
 
-grid = [
+global grid = [
     [3, 0, 6, 5, 0, 8, 4, 0, 0],
     [5, 2, 0, 0, 0, 0, 0, 0, 0],
     [0, 8, 7, 0, 0, 0, 0, 3, 1],
@@ -53,6 +53,6 @@ while True:
     x=int(input("select column: "))
     num=int(input("select number to test: "))
 
-    possible(grid,x,y,num)
-    if input("again? (y/n) ").lower()!="y":
+    possible(x,y,num)
+    if input("again?(y/n) ").lower()!="y":
         break
