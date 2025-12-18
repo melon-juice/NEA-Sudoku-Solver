@@ -19,7 +19,7 @@ class Stack:
     If a conflict is found in main(), then the stack is popped to restore the previous commit"""
 
     def __init__(self):
-        self.maxSize=60
+        self.maxSize=1000
         self.s=[None]*self.maxSize
         self.tosp=-1 #initialised as empty
         self.size=0
@@ -58,7 +58,7 @@ class Stack:
     def peek(self):
         return self.s[self.tosp]
     
-def allowed(x,y,test_num):
+def allowed(grid,x,y,test_num):
     #checks for conflicts with rows and columns
     #returns boolean TRUE if test_num can be in (x,y) else FALSE
     #'message' variable stores a string that can be returned during debugging
@@ -86,30 +86,35 @@ def allowed(x,y,test_num):
     message="No conflicts found!"
     return True
 
-def dfs_solution_finder(grid, recursive_call=False): # default set to begin at (0,0) and no commits
+def dfs_solution_finder(grid, recursive_call=False): # default state of recursive_call causes initialiation
     """recursive function to solve sudoku grid"""
     
-    if not recursive_call:
-        grid_state=Stack() # instatiation of a stack
-        solved_grids=[] # creates list of solutions, currently empty
-    grid_state.push(grid) # push current grid state
+    # if not recursive_call:
+    #     grid_state=Stack() # instatiation of a stack
+    #     solved_grids=[] # creates list of solutions, currently empty
+    # grid_state.push(grid) # push current grid state
 
-    print(grid_state.peek()) #used for debugging
+    # for line in grid_state.peek(): #used for debugging
+    #     print(line)
+    # print("\n")
 
-    for row in grid:
-        for col in row:
-            if grid[row][col]==0:
+    for row_index in range(9):
+        for col_index in range(9):
+            if grid[row_index][col_index]==0: #if the square is empty
                                 
                 for i in range(1,10):
-                    if allowed(y=row,x=col,test_num=i):
+                    if allowed(grid,y=row_index,x=col_index,test_num=i):
                         
-                        grid[row][col]=i # commits the first valid change detected
-                        dfs_solution_finder(grid,[row,col],True)
-                        grid[row][col]=0
+                        grid[row_index][col_index]=i # commits the first valid change detected
+                        dfs_solution_finder(grid,True)
+                        grid[row_index][col_index]=0
 
                 return #exits the recursive call after trying all valid inputs
     
-    solved_grids.append(grid)
+    #solved_grids.append(grid)
+    for line in grid: 
+        print(line)
+    print("\n")
                     
                 
                     
