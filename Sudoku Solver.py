@@ -58,14 +58,18 @@ def dfs_solution_finder(grid, solved_grids): # default state of recursive_call c
  
 def main():
     """calls dfs_solution_finder()"""
+    sudoku_grid=SudokuGrids(0)
     print("You entered:")
     display(sudoku_grid)
     solutions_list=[]
     dfs_solution_finder(sudoku_grid,solutions_list)
-    print(f"Total solutions found: {len(solutions_list)}")
 
-    for solution in solutions_list:
-        display(solution)
+    if len(solutions_list)==0:
+        print("No Solutions were found for this puzzle!")
+    else:
+        print(f"Total solutions found: {len(solutions_list)}")
+        for solution in solutions_list:
+            display(solution)
     
 
 main()
