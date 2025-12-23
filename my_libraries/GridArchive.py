@@ -2,7 +2,7 @@ def SudokuGrids(version=0):
     """A limited collection of empty sudoku grids.
     Each different integer 'version' (0-2) will return a different grid."""
 
-    if version>=3:
+    if version>2 or version<0:
         return None
 
     else:
