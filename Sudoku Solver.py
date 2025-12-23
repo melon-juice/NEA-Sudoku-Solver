@@ -32,7 +32,7 @@ def allowed(grid,x,y,test_num):
     message="No conflicts found!"
     return True
 
-def dfs_solution_finder(grid, solved_grids): # default state of recursive_call causes initialiation
+def dfs_solution_finder(grid, edits_counter, solved_grids): # default state of recursive_call causes initialiation
     """recursive function to solve sudoku grid"""
 
     for row_index in range(9):
@@ -43,7 +43,8 @@ def dfs_solution_finder(grid, solved_grids): # default state of recursive_call c
                     if allowed(grid,y=row_index,x=col_index,test_num=i):
                         
                         grid[row_index][col_index]=i # the algorithm commits the first *valid* change detected
-                        dfs_solution_finder(grid,solved_grids) # recursive call
+                        edits_counter[0]+=1
+                        dfs_solution_finder(grid, edits_counter, solved_grids) # recursive call
                         grid[row_index][col_index]=0
 
                 return # IMPORTANT: exits the recursive call after trying all valid inputs
@@ -58,8 +59,10 @@ def main():
     print("You entered:")
     UnicodeDisplay(sudoku_grid)
     solutions_list=[]
-    dfs_solution_finder(sudoku_grid,solutions_list)
+    edits_counter=[0] # mutable global variable
+    dfs_solution_finder(sudoku_grid, edits_counter, solutions_list)
 
+    print(edits_counter[0],"edits were made.")
     if len(solutions_list)==0:
         print("No Solutions were found for this puzzle!")
     else:
