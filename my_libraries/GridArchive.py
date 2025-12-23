@@ -30,7 +30,7 @@ def SudokuGrids(version=0):
                     [0,5,0,0,0,3,0,0,1],
                     [0,0,4,6,0,0,0,0,0]]
 
-        if version==2:
+        if version==2: ###something not right - returns no solutions
             return [[9,0,6,0,7,0,4,0,3],
                     [0,0,0,4,0,0,2,0,0],
                     [0,7,0,0,2,3,0,1,0],
