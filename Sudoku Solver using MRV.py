@@ -7,6 +7,16 @@ import copy # used to store *multiple solutions* for a particular sudoku grid in
 ### The grid is passed in as a 2D list
 ### The 'blank' squares are denoted by 0
 
+def blank_cells_counter(grid):
+    """Counts the number of blank cells in the grid (used for comparisons)"""
+    count=0
+    for row_index in range(9):
+        for col_index in range(9):
+            if grid[row_index][col_index]==0:
+                count+=1
+    return count
+
+
 def MRV_cell(grid):
     """Finds the best next coordinate for the dfs_solution_finder function,
     by trying to find the cell that has the lowest allowed_count.
@@ -87,16 +97,16 @@ def dfs_solution_finder(grid, edits_counter, backtracks_counter, solved_grids): 
     
 def main():
     """calls dfs_solution_finder()"""
-    sudoku_grid=SudokuGrids(1)
-    print("You entered:")
+    sudoku_grid=SudokuGrids(18)
     UnicodeDisplay(sudoku_grid)
-    solutions_list=[]
 
+    solutions_list=[]
     backtracks_counter=[0]
     edits_counter=[0] # mutable global variables
 
     dfs_solution_finder(sudoku_grid, edits_counter, backtracks_counter, solutions_list)
 
+    print("This grid has",blank_cells_counter(sudoku_grid),"blank cells.")
     print(edits_counter[0],"edits were made, and",backtracks_counter[0],"backtracks were made.")
     if len(solutions_list)==0:
         print("No Solutions were found for this puzzle!")

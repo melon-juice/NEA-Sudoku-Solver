@@ -61,7 +61,8 @@ def dfs_solution_finder(grid, edits_counter, backtracks_counter, solved_grids): 
  
 def main():
     """calls dfs_solution_finder()"""
-    sudoku_grid=SudokuGrids(1)
+    
+    sudoku_grid=SudokuGrids(18)
     print("You entered:")
     UnicodeDisplay(sudoku_grid)
     solutions_list=[]
