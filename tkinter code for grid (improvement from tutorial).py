@@ -7,6 +7,11 @@ root.geometry("324x420")
 label=Label(root,text="Fill in the numbers and click solve",pady=20)
 label.grid(row=0,column=1,columnspan=10,sticky="news")
 
+errLabel=Label(root,text="",fg="red")
+errLabel.grid(row=15,column=1,columnspan=10)
+
+solvedLabel=Label(root,text="",fg="green")
+solvedLabel.grid(row=15,column=1,columnspan=10)
 
 cells={}
 
