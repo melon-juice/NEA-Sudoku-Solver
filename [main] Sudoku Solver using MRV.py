@@ -1,5 +1,4 @@
 from my_libraries.UNICODEformatting import display as UnicodeDisplay
-from my_libraries.StackClass import Stack
 from my_libraries.GridArchive import SudokuGrids # imports different empty grids that can be tested when debugging
 import copy # used to store *multiple solutions* for a particular sudoku grid input
 
@@ -16,6 +15,24 @@ def blank_cells_counter(grid):
                 count+=1
     return count
 
+def convert_grid(grid):
+    """converts format of grid between array (used during algorithm implementation) and single line (for storage)"""
+
+    if type(grid)==list: # 2d array -> single line
+        single_line=""
+        for row in grid:
+            for element in row:
+                single_line+=str(element)
+        return single_line
+
+    else: # single line -> 2d array
+        grid_list=[[],[],[],[],[],[],[],[],[]]
+        for i in range(9):
+            j=i*9
+            for digit in grid[j+0:j+9]:
+                grid_list[i].append(int(digit))
+
+        return grid_list
 
 def MRV_cell(grid):
     """Finds the best next coordinate for the dfs_solution_finder function,
@@ -97,7 +114,7 @@ def dfs_solution_finder(grid, edits_counter, backtracks_counter, solved_grids): 
     
 def main():
     """calls dfs_solution_finder()"""
-    sudoku_grid=SudokuGrids(18)
+    sudoku_grid=SudokuGrids(9)
     UnicodeDisplay(sudoku_grid)
 
     solutions_list=[]
