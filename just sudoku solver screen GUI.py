@@ -54,6 +54,10 @@ def get_board():
     return board
 
 def solve_grid():
+
+    if all(all(cell==0 for cell in row) for row in get_board()): # checks the board definitely has some inputs
+        print("Board empty! Cannot solve.")
+        return
     
     start_time=time.time() # timer begins
     solutions_list=[] 
