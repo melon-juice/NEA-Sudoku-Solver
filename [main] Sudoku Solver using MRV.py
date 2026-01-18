@@ -89,7 +89,7 @@ def allowed(grid,x,y,test_num):
     return True
 
 def dfs_solution_finder(grid, edits_counter, backtracks_counter, solved_grids): # default state of recursive_call causes initialiation
-    """recursive function to solve sudoku grid"""
+    """recursive function to solve sudoku grid. Updates solved_grids with copies of solutions."""
 
     next_square=MRV_cell(grid) ###
     if not next_square: # if nothing was returned by MRV_cell() function, then there are no empty squares left
