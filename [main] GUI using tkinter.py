@@ -1,7 +1,11 @@
 import tkinter
 from tkinter import messagebox
-import time
+import time # used to track time elapsed by solver algorithm
+import random # used to remove random cells from the solved grid
+              # used to randomly substitute/swap numbers
 from my_libraries.Sudoku_Solver_using_MRV import main as solve_sudoku_MRV
+from my_libraries.GridArchive import SudokuGrids
+from my_libraries.sudoku_generator import main as generate_sudoku
 
 class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
     def __init__(self):
@@ -9,8 +13,14 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         
         self.title("Sudoku Solver")
         self.geometry("600x600")
+        self.resizable(False, False)
         self.create_menu()
         self.create_widgets()
+
+    def show_frame(self,frame_name):
+        """switches between frames by raising them to the top"""
+        frame=self.frames[frame_name]
+        frame.tkraise() # frame is sent to the top, making it the frame that the user views
 
     def create_menu(self):
         self.menubar=tkinter.Menu(self)
@@ -47,7 +57,7 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
     
     def __init__(self):
         super().__init__()
-        self.geometry("350x350")
+        self.geometry("360x410")
         self.cells={}
         self.timer_bool=tkinter.IntVar()
         self.validatecommand=(self.register(self.validate_number),"%P") # handles input validation using Tcl
@@ -128,6 +138,87 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
                 for line in solution:
                     print(line) # must later update this to show solution in GUI
             
+
+class GameWindow(CreateApp):
+    
+    def __init__(self):
+        super().__init__()
+        self.title("Sample App")
+        self.geometry("400x500")
+
+        # a container is initialised to hold all my frames within the game window
+        container=tkinter.Frame(self)
+        container.pack(fill="both", expand=True) # container expanded to fill the whole window
+        self.frames={} # all frames are managed in a dictionary
+
+        # each frame is initialised and stored
+        for F in (OptionsScreen,GeneratedGame):
+            page_name=F.__name__  # retreived the string "OptionsScreen", etc.
+            frame=F(parent=container,controller=self)
+            self.frames[page_name]=frame # frame is stored in dictionary
+            frame.grid(row=0,column=0,sticky="nsew") # frame is created (this line is necessary)
+       
+        self.show_frame("OptionsScreen") # the log in page is placed at the top
+    
+class OptionsScreen(tkinter.Frame): # inherits frame
+    
+    def __init__(self,parent,controller):
+        super().__init__(parent)
+        self.controller=controller
+
+        tkinter.Label(self, text="Select Difficulty", font=("Arial", 16)).pack(pady=20)
+        
+        for level in ("easy","medium","hard"):
+            level_button=tkinter.Button(self, text=level.capitalize(), width=15, 
+                    command=lambda l=level: self.begin_game(l))
+            level_button.pack(pady=10)
+
+    def begin_game(self, difficulty_level):
+        try:
+            grid=generate_sudoku(difficulty_level) # generated using library
+            game_frame=self.controller.frames["GeneratedGame"]
+            game_frame.load_puzzle(grid)
+            self.controller.show_frame("GeneratedGame")
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not generate puzzle: {e}") 
+
+class GeneratedGame(tkinter.Frame): # inherits frame
+    
+    def __init__(self,parent,controller):
+        super().__init__(parent)
+        self.controller=controller
+        self.cells={} # initialised grid
+
+        header=tkinter.Label(self, text="Play Sudoku!", font=("Arial", 14))
+        header.pack(pady=10)
+
+        self.grid_container=tkinter.Frame(self)
+        self.grid_container.pack(pady=10)
+
+        back_button=tkinter.Button(self, text="Back to Menu", 
+                command=lambda: controller.show_frame("OptionsScreen"))
+        back_button.pack(pady=10)
+
+    def load_puzzle(self, grid):
+        """Fills the UI grid with the generated puzzle"""
+        for widget in self.grid_container.winfo_children():
+            widget.destroy()
+        self.cells = {}
+
+        for row in range(9):
+            for column in range(9):
+                digit=grid[row][column]
+                if digit!=0:
+                    cell=tkinter.Entry(self.grid_container, width=3)
+                    cell.insert(0,str(digit))
+                    cell.config(state="readonly", readonlybackground="#ececec") # makes it not editable by the user
+                else:
+                    cell=tkinter.Entry(self.grid_container, width=3)
+                
+                cell.grid(row=row, column=column, padx=1, pady=1)
+                self.cells[(row,column)]=cell # updates the cell dictionary
+
+
 # def solve(): gets elements inputted by user using get_board// will output error message if unsolveable
 #   grid=get_board
 #   calls solve_sudoku !!! <- using "my_libraries.Sudoku-Solver-using-MRV", aka solve_sudoku"
@@ -136,5 +227,6 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
 
 #solveButton that will call the solve() function
 
-SudokuSolverApp=SolverWindow()
+#SudokuSolverApp=SolverWindow()
+SudokuSolverApp=GameWindow()
 SudokuSolverApp.mainloop()

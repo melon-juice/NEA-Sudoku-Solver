@@ -55,22 +55,22 @@ def generate_sudoku(full_grid, difficulty):
     grid=number_shuffle(grid)
     return grid
 
-def main():
-    archive_num=random.randint(3,25)
-    random_unsolved_grid=SudokuGrids(archive_num)
-    grid=solve_sudoku_MRV(random_unsolved_grid)[0] # retrieves a random unsolved sudoku from my grid archive and solves it
-    return generate_sudoku(grid,"easy")
+##def main():
+##    archive_num=random.randint(3,25)
+##    random_unsolved_grid=SudokuGrids(archive_num)
+##    grid=solve_sudoku_MRV(random_unsolved_grid)[0] # retrieves a random unsolved sudoku from my grid archive and solves it
+##    return generate_sudoku(grid,"easy")
 
 # remove the following: it is just for debugging
-##archive_num=random.randint(3,25)
-##random_unsolved_grid=SudokuGrids(archive_num)
-##grid=solve_sudoku_MRV(random_unsolved_grid)[0] # retrieves a random unsolved sudoku from my grid archive and solves it
-##print(f"Original: number {archive_num} in archive.")
-##UnicodeDisplay(grid)
-##
-##for i in range(3):
-##    print("To solve:")
-##    UnicodeDisplay(generate_sudoku(grid,"easy"))
+archive_num=random.randint(3,25)
+random_unsolved_grid=SudokuGrids(archive_num)
+grid=solve_sudoku_MRV(random_unsolved_grid)[0] # retrieves a random unsolved sudoku from my grid archive and solves it
+print(f"Original: number {archive_num} in archive.")
+UnicodeDisplay(grid)
+
+for i in range(3):
+    print("To solve:")
+    UnicodeDisplay(generate_sudoku(grid,"easy"))
 
 
 
