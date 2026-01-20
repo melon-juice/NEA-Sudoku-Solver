@@ -1,5 +1,5 @@
 from my_libraries.UNICODEformatting import display as UnicodeDisplay
-from my_libraries.GridArchive import SudokuGrids # imports different empty grids that can be tested when debugging
+from my_libraries.GridArchive import SudokuGrids # imports different unsolved grids that can be tested when debugging
 import copy # used to store *multiple solutions* for a particular sudoku grid input
 
 # This file solves a sudoku grid inputted, provided that:
