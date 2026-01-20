@@ -10,12 +10,18 @@ from my_libraries.sudoku_generator import main as generate_sudoku
 class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
     def __init__(self):
         super().__init__()
-        
         self.title("Sudoku Solver")
-        self.geometry("600x600")
+        self.geometry("360x450")
         self.resizable(False, False)
+        self.validatecommand=(self.register(self.validate_number),"%P") # moved to parent class so that it is applied to all user inputs
+                                        # handles input validation using Tcl
+                                        # the "%P" part stands for the expected result before validating
         self.create_menu()
-        self.create_widgets()
+        
+    def validate_number(self, P):
+        """Only allows a single digit in the inculsive range 1-9 OR an empty string"""
+        # essentially checks for single digit, then excludes 0
+        return (P.isdigit() and len(P)==1 and P!="0") or P==""
 
     def show_frame(self,frame_name):
         """switches between frames by raising them to the top"""
@@ -33,6 +39,51 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         self.app_menu.add_command(label="Exit App", command=self.exit_app)
         self.menubar.add_cascade(label="Menu", menu=self.app_menu)
         self.config(menu=self.menubar)
+
+    def draw3x3grid(self, container, cells_dict, row, column, bgcolour, grid):
+        for i in range(3):
+            for j in range(3):
+
+                digit=grid[row+i-1][column+j] # retrieves data value within the 2D list grid (-1 is because zero-index)
+                e=tkinter.Entry(container, width=5, bg=bgcolour, justify="center", 
+                                validate="key", validatecommand=self.validatecommand, borderwidth=2)
+                                
+                if digit!=0: # number 1-9
+                    e.insert(0, str(digit)) # digit added to UI display and made readonly
+                    e.config(state="readonly",readonlybackground=bgcolour, relief="flat")
+                
+                # the following updates the correspondinf position within the dictionary and UI
+                e.grid(row=row+i, column=column+j, sticky="nsew", padx=1, pady=1, ipady=5)     
+                cells_dict[(row+i,column+j)]=e # dictionary is updated
+
+    def draw9x9grid(self,container,cells_dict,grid=None):
+        """grid display method used to show the grid in a consistent way.
+        container is used to determine the correct frame to draw into.
+        If a specific grid is passed in, it will be displayed, or else an empty grid is displayed."""
+        
+        if grid==None: # default to empty grid if none provided
+            grid=[[0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0]]
+        
+        for widget in container.winfo_children(): # it's important to get rid of any existing widgets in the container, for game refreshes
+            widget.destroy()
+        cells_dict.clear()
+        
+        colour="#e3e3e3"
+        for rowNo in range(1,10,3):
+            for colNo in range(0,9,3):
+                self.draw3x3grid(container, cells_dict, rowNo, colNo, colour, grid) # relevant paramteters are passed into 3x3 drawer
+                if colour=="#e3e3e3":
+                    colour="#bababa"
+                else:
+                    colour="#e3e3e3"
 
     # the following methods handle when a user selelcts a menu option
 
@@ -57,40 +108,16 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
     
     def __init__(self):
         super().__init__()
-        self.geometry("360x410")
         self.cells={}
         self.timer_bool=tkinter.IntVar()
-        self.validatecommand=(self.register(self.validate_number),"%P") # handles input validation using Tcl
-                                            # the "%P" part stands for the expected result before validating
         self.grid_frame=tkinter.Frame(self) # initailaises grid_frame, where the grid will be placed
         self.grid_frame.grid(row=1, column=0, padx=20, pady=20)
-        self.draw9x9grid()
-        # creates the controls: checkbox for timer / solve button
+        self.draw9x9grid(self.grid_frame,self.cells)
+
+        # the following creates the controls: checkbox for timer / solve button
         tkinter.Checkbutton(self, text="Display runtime", variable=self.timer_bool).grid(row=2, column=0, sticky="w", padx=20)
         tkinter.Button(self, text="Solve", bg="light grey", command=self.solve_grid).grid(row=2, column=0, pady=10)
     
-    def validate_number(self, P):
-        """Only allows a single digit in the inculsive range 1-9 OR an empty string"""
-        # essentially checks for single digit, then excludes 0
-        return (P.isdigit() and len(P)==1 and P!="0") or P==""
-
-    def draw3x3grid(self, row, column, bgcolour):
-        for i in range(3):
-            for j in range(3):
-                e=tkinter.Entry(self.grid_frame, width=5, bg=bgcolour, justify="center", validate="key", validatecommand=self.validatecommand)
-                e.grid(row=row+i+1, column=column+j+1, sticky="nsew", padx=1, pady=1, ipady=5)     
-                self.cells[(row+i+1, column+j+1)]=e
-
-    def draw9x9grid(self):
-        colour="light grey"
-        for rowNo in range(1,10,3):
-            for colNo in range(0,9,3):
-                self.draw3x3grid(rowNo, colNo, colour)
-                if colour=="light grey":
-                    colour="silver"
-                else:
-                    colour="light grey"
-
     def get_board(self):
         """Returns the current state of the GUI board as a 2D list, ready for solving."""
         board=[]
@@ -143,8 +170,7 @@ class GameWindow(CreateApp):
     
     def __init__(self):
         super().__init__()
-        self.title("Sample App")
-        self.geometry("400x500")
+        self.title("Sudoku Game")
 
         # a container is initialised to hold all my frames within the game window
         container=tkinter.Frame(self)
@@ -177,7 +203,7 @@ class OptionsScreen(tkinter.Frame): # inherits frame
         try:
             grid=generate_sudoku(difficulty_level) # generated using library
             game_frame=self.controller.frames["GeneratedGame"]
-            game_frame.load_puzzle(grid)
+            self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, grid)
             self.controller.show_frame("GeneratedGame")
         except Exception as e:
             messagebox.showerror("Error", f"Could not generate puzzle: {e}") 
@@ -187,7 +213,7 @@ class GeneratedGame(tkinter.Frame): # inherits frame
     def __init__(self,parent,controller):
         super().__init__(parent)
         self.controller=controller
-        self.cells={} # initialised grid
+        self.cells={} # initialised grid - this will be filled by draw9x9grid
 
         header=tkinter.Label(self, text="Play Sudoku!", font=("Arial", 14))
         header.pack(pady=10)
@@ -198,25 +224,6 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         back_button=tkinter.Button(self, text="Back to Menu", 
                 command=lambda: controller.show_frame("OptionsScreen"))
         back_button.pack(pady=10)
-
-    def load_puzzle(self, grid):
-        """Fills the UI grid with the generated puzzle"""
-        for widget in self.grid_container.winfo_children():
-            widget.destroy()
-        self.cells = {}
-
-        for row in range(9):
-            for column in range(9):
-                digit=grid[row][column]
-                if digit!=0:
-                    cell=tkinter.Entry(self.grid_container, width=3)
-                    cell.insert(0,str(digit))
-                    cell.config(state="readonly", readonlybackground="#ececec") # makes it not editable by the user
-                else:
-                    cell=tkinter.Entry(self.grid_container, width=3)
-                
-                cell.grid(row=row, column=column, padx=1, pady=1)
-                self.cells[(row,column)]=cell # updates the cell dictionary
 
 
 # def solve(): gets elements inputted by user using get_board// will output error message if unsolveable
