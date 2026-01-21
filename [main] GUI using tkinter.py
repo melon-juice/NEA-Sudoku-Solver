@@ -4,7 +4,6 @@ import time # used to track time elapsed by solver algorithm
 import random # used to remove random cells from the solved grid
               # used to randomly substitute/swap numbers
 from my_libraries.Sudoku_Solver_using_MRV import main as solve_sudoku_MRV
-from my_libraries.GridArchive import SudokuGrids
 from my_libraries.sudoku_generator import main as generate_sudoku
 
 class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
@@ -44,7 +43,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         for i in range(3):
             for j in range(3):
 
-                digit=grid[row+i-1][column+j] # retrieves data value within the 2D list grid (-1 is because zero-index)
+                digit=grid[row+i][column+j] # retrieves data value within the 2D list grid
                 e=tkinter.Entry(container, width=5, bg=bgcolour, justify="center", 
                                 validate="key", validatecommand=self.validatecommand, borderwidth=2)
                                 
@@ -77,7 +76,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         cells_dict.clear()
         
         colour="#e3e3e3"
-        for rowNo in range(1,10,3):
+        for rowNo in range(0,9,3):
             for colNo in range(0,9,3):
                 self.draw3x3grid(container, cells_dict, rowNo, colNo, colour, grid) # relevant paramteters are passed into 3x3 drawer
                 if colour=="#e3e3e3":
@@ -121,9 +120,9 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
     def get_board(self):
         """Returns the current state of the GUI board as a 2D list, ready for solving."""
         board=[]
-        for row in range(2,11):
+        for row in range(9):
             row_temp=[]
-            for column in range(1,10):
+            for column in range(9):
                 digit=self.cells[(row, column)].get()
                 if digit=="": # empty cells are appended as zeroes, to match my sudoku solver logic
                     row_temp.append(0)
@@ -234,6 +233,6 @@ class GeneratedGame(tkinter.Frame): # inherits frame
 
 #solveButton that will call the solve() function
 
-#SudokuSolverApp=SolverWindow()
-SudokuSolverApp=GameWindow()
+SudokuSolverApp=SolverWindow()
+#SudokuSolverApp=GameWindow()
 SudokuSolverApp.mainloop()
