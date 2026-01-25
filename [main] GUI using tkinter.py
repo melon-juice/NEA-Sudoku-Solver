@@ -1,8 +1,7 @@
 import tkinter
 from tkinter import messagebox
 import time # used to track time elapsed by solver algorithm
-import random # used to remove random cells from the solved grid
-              # used to randomly substitute/swap numbers
+from func_timeout import func_timeout, FunctionTimedOut # used to output a timeout error when necessary
 from my_libraries.Sudoku_Solver_using_MRV import main as solve_sudoku_MRV
 from my_libraries.sudoku_generator import main as generate_sudoku
 
@@ -10,7 +9,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
     def __init__(self):
         super().__init__()
         self.title("Sudoku Solver")
-        self.geometry("360x450")
+        self.geometry("380x450")
         self.resizable(False, False)
         self.validatecommand=(self.register(self.validate_number),"%P") # moved to parent class so that it is applied to all user inputs
                                         # handles input validation using Tcl
@@ -49,7 +48,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
                                 
                 if digit!=0: # number 1-9
                     e.insert(0, str(digit)) # digit added to UI display and made readonly
-                    e.config(state="readonly",readonlybackground=bgcolour, relief="flat")
+                    e.config(state="readonly",readonlybackground=bgcolour, fg="#016257", relief="flat")
                 
                 # the following updates the correspondinf position within the dictionary and UI
                 e.grid(row=row+i, column=column+j, sticky="nsew", padx=1, pady=1, ipady=5)     
@@ -108,14 +107,21 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
     def __init__(self):
         super().__init__()
         self.cells={}
-        self.timer_bool=tkinter.IntVar()
+        self.display_runtime_bool=tkinter.IntVar()
+
+        
+        self.header=tkinter.Label(self, text="Input your incomplete grid here:", font=("Consolas",12))
+        self.header.grid(row=0, column=0, columnspan=2, pady=15)
+
         self.grid_frame=tkinter.Frame(self) # initailaises grid_frame, where the grid will be placed
-        self.grid_frame.grid(row=1, column=0, padx=20, pady=20)
+        self.grid_frame.grid(row=1, column=0, padx=20, pady=5)
         self.draw9x9grid(self.grid_frame,self.cells)
 
         # the following creates the controls: checkbox for timer / solve button
-        tkinter.Checkbutton(self, text="Display runtime", variable=self.timer_bool).grid(row=2, column=0, sticky="w", padx=20)
-        tkinter.Button(self, text="Solve", bg="light grey", command=self.solve_grid).grid(row=2, column=0, pady=10)
+        tkinter.Checkbutton(self, text="Display runtime", variable=self.display_runtime_bool, width=15, height=2).place(x=220, y=380)
+        tkinter.Button(self, text="Clear", bg="light grey", command=lambda: self.draw9x9grid(self.grid_frame, self.cells),
+                       width=10, height=2).place(x=30, y=380)
+        tkinter.Button(self, text="Test for\nSolutions", bg="turquoise", command=self.solve_grid, width=10, height=2).place(x=130, y=380)
     
     def get_board(self):
         """Returns the current state of the GUI board as a 2D list, ready for solving."""
@@ -141,28 +147,39 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
             messagebox.showerror("Board Empty", "Input your board before clicking 'Solve'.")
             return
         
+
         flat_list = [item for sublist in current_board for item in sublist if item!=0] ##hmmm
         if len(flat_list)<17:
             messagebox.showwarning("Too Few Clues", "Please enter at least 17 numbers to avoid a crash.")
             return
     
-        start_time=time.time() # timer begins
         solutions_list=[]
-        try:              
-            solutions_list=solve_sudoku_MRV(current_board) ### key line
-            if self.timer_bool.get()==1: # "display runtime" box is checked
-                elapsed_time=time.time()-start_time
-                print(f"\nTime elapsed: {elapsed_time:.4f} seconds")
-        except Exception as e:
-            messagebox.showerror("Solver Error", f"The solver crashed or timed out.\nDetails: {e}")
+        start_time=time.time() # timer begins
         
+        try:
+            solutions_list=func_timeout(4.5, solve_sudoku_MRV,args=(current_board,)) # Solve library called, with a timeout after 4.5 seconds
+
+            # if the algorithm reaches this part of the code, it means a timeout did not occur and the solver algorithm was successful                                                                         
+            messagebox.showinfo("Solution found!",f"The solver algorithm found {len(solutions_list)} solutions.") 
+            elapsed_time=time.time()-start_time
+
+        except FunctionTimedOut:
+            messagebox.showerror("Solver Error", f"The solver took more than 4.5 seconds.\nYour input is unlikely to have a single solution.")
+            print("The subroutine timed out after 3 seconds.")
+
+        except Exception as e:
+            messagebox.showerror("Solver Error", f"An error ocurred when attempting to solve.\nDetails: {e}")
+
+
         if len(solutions_list)==0:
-            messagebox.showerror("No solutions", "Check your inputs and try again.")
+                messagebox.showerror("No solutions", "Check your inputs and try again.")
         else:
             print(f"\nTotal solutions found: {len(solutions_list)}")
             for solution in solutions_list:
                 for line in solution:
                     print(line) # must later update this to show solution in GUI
+            if self.display_runtime_bool.get()==1: # "display runtime" box is checked
+                    print(f"\nTime elapsed: {elapsed_time:.4f} seconds")
             
 
 class GameWindow(CreateApp):
@@ -170,10 +187,12 @@ class GameWindow(CreateApp):
     def __init__(self):
         super().__init__()
         self.title("Sudoku Game")
-
+        
         # a container is initialised to hold all my frames within the game window
         container=tkinter.Frame(self)
         container.pack(fill="both", expand=True) # container expanded to fill the whole window
+        container.grid_columnconfigure(0, weight=1)
+        container.grid_rowconfigure(0, weight=1)
         self.frames={} # all frames are managed in a dictionary
 
         # each frame is initialised and stored
@@ -181,31 +200,45 @@ class GameWindow(CreateApp):
             page_name=F.__name__  # retreived the string "OptionsScreen", etc.
             frame=F(parent=container,controller=self)
             self.frames[page_name]=frame # frame is stored in dictionary
-            frame.grid(row=0,column=0,sticky="nsew") # frame is created (this line is necessary)
+            frame.grid(row=0,column=0,sticky="nsew") # frame is placed (this line is necessary)
        
         self.show_frame("OptionsScreen") # the log in page is placed at the top
+
+    def change_size(self, size_string):
+        """Resizes window for switching between frames"""
+        self.resizable(True, True) 
+        self.geometry(size_string)
+        self.update_idletasks() #### look into this
+        self.resizable(False, False)
     
 class OptionsScreen(tkinter.Frame): # inherits frame
     
     def __init__(self,parent,controller):
         super().__init__(parent)
         self.controller=controller
+        self.controller.change_size("380x320")
 
-        tkinter.Label(self, text="Select Difficulty", font=("Arial", 16)).pack(pady=20)
+        self.header=tkinter.Label(self, text="Select Difficulty:", font=("Consolas",12))
+        self.header.pack(pady=10)
         
         for level in ("easy","medium","hard"):
-            level_button=tkinter.Button(self, text=level.capitalize(), width=15, 
+            level_button=tkinter.Button(self, text=level.title(), width=10, height=2, bg="light grey",
                     command=lambda l=level: self.begin_game(l))
-            level_button.pack(pady=10)
+            level_button.pack(padx=20, pady=(10))
+
+        tkinter.Label(self, text="Note that loading the puzzle may take a moment.").pack(pady=(10))
 
     def begin_game(self, difficulty_level):
         try:
             grid=generate_sudoku(difficulty_level) # generated using library
             game_frame=self.controller.frames["GeneratedGame"]
             self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, grid)
+            game_frame.grid_container.pack(padx=20)
+            self.controller.change_size("380x480")
             self.controller.show_frame("GeneratedGame")
+           
         except Exception as e:
-            messagebox.showerror("Error", f"Could not generate puzzle: {e}") 
+            messagebox.showerror("Error", f"Could not generate puzzle.\nDetails: {e}") 
 
 class GeneratedGame(tkinter.Frame): # inherits frame
     
@@ -214,25 +247,26 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         self.controller=controller
         self.cells={} # initialised grid - this will be filled by draw9x9grid
 
-        header=tkinter.Label(self, text="Play Sudoku!", font=("Arial", 14))
-        header.pack(pady=10)
+        header_frame=tkinter.Frame(self)
+        header_frame.pack(fill="x", pady=20)
 
+        tkinter.Button(header_frame, text="<- Return to difficulties", width=20, height=1,
+                       command=lambda:[self.controller.change_size("380x320"), controller.show_frame("OptionsScreen")]
+                       ).pack(side="left", padx=20)
+        tkinter.Label(header_frame, text="Try solving this!", font=("Consolas",12)).pack(side="left")
+        
         self.grid_container=tkinter.Frame(self)
         self.grid_container.pack(pady=10)
 
-        back_button=tkinter.Button(self, text="Back to Menu", 
-                command=lambda: controller.show_frame("OptionsScreen"))
-        back_button.pack(pady=10)
+        button_frame=tkinter.Frame(self)
+        button_frame.pack(padx=20, pady=20, fill="x")
 
+        tkinter.Button(button_frame, text="Undo", bg="light grey", command=None, width=10, height=2).pack(side="left", padx=10, expand=True)
+        tkinter.Button(button_frame, text="Clear Board", bg="light grey", command=None, width=10, height=2).pack(side="left", padx=10, expand=True)
+        tkinter.Button(button_frame, text="Check\nSolution", bg="turquoise", command=None, width=10, height=2).pack(side="left", padx=10, expand=True)
 
-# def solve(): gets elements inputted by user using get_board// will output error message if unsolveable
-#   grid=get_board
-#   calls solve_sudoku !!! <- using "my_libraries.Sudoku-Solver-using-MRV", aka solve_sudoku"
-#   displays grid appropriately within UI
-#   ...or error message if applicable
+# SudokuSolverApp=SolverWindow()
+# SudokuSolverApp.mainloop()
 
-#solveButton that will call the solve() function
-
-SudokuSolverApp=SolverWindow()
-#SudokuSolverApp=GameWindow()
-SudokuSolverApp.mainloop()
+SudokuGameApp=GameWindow()
+SudokuGameApp.mainloop()
