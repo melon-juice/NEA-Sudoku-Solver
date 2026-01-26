@@ -1,12 +1,11 @@
 
 class Stack:
-    """ Stack class used to stack up attempts.
-    If a conflict is found in main(), then the stack is popped to restore the previous commit"""
+    """ Stack class used to stack up edits. When undo is pressed, the stack is popped to undo the last change"""
 
     def __init__(self):
-        self.maxSize=1000
+        self.maxSize=100
         self.s=[None]*self.maxSize
-        self.tosp=-1 #initialised as empty
+        self.tosp=-1 # initialised as empty
         self.size=0
 
     def isEmpty(self):

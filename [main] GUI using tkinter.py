@@ -1,9 +1,11 @@
 import tkinter
-from tkinter import messagebox
+from tkinter import messagebox # used to output appropriate messages to the user
 import time # used to track time elapsed by solver algorithm
+import webbrowser # used for hyperlink in 'about' page
 from func_timeout import func_timeout, FunctionTimedOut # used to output a timeout error when necessary
 from my_libraries.Sudoku_Solver_using_MRV import main as solve_sudoku_MRV
 from my_libraries.sudoku_generator import main as generate_sudoku
+import my_libraries.StackClass as undo_stack
 
 class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
     def __init__(self):
@@ -32,7 +34,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         self.app_menu=tkinter.Menu(self.menubar, tearoff=0)
         self.app_menu.add_command(label="Home", command=self.go_home)
         self.app_menu.add_command(label="Tutorial", command=self.open_tutorial)
-        self.app_menu.add_command(label="Sudoku Tricks", command=self.open_tricks)
+        self.app_menu.add_command(label="About", command=self.open_about)
         self.app_menu.add_separator()
         self.app_menu.add_command(label="Exit App", command=self.exit_app)
         self.menubar.add_cascade(label="Menu", menu=self.app_menu)
@@ -48,7 +50,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
                                 
                 if digit!=0: # number 1-9
                     e.insert(0, str(digit)) # digit added to UI display and made readonly
-                    e.config(state="readonly",readonlybackground=bgcolour, fg="#016257", relief="flat")
+                    e.config(state="readonly",readonlybackground=bgcolour, fg="#008B7B", relief="flat")
                 
                 # the following updates the correspondinf position within the dictionary and UI
                 e.grid(row=row+i, column=column+j, sticky="nsew", padx=1, pady=1, ipady=5)     
@@ -70,7 +72,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
                   [0,0,0,0,0,0,0,0,0],
                   [0,0,0,0,0,0,0,0,0]]
         
-        for widget in container.winfo_children(): # it's important to get rid of any existing widgets in the container, for game refreshes
+        for widget in container.winfo_children(): # this gets rid of any existing widgets in the container, for game refreshes
             widget.destroy()
         cells_dict.clear()
         
@@ -83,24 +85,87 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
                 else:
                     colour="#e3e3e3"
 
+    def get_board(self,cells_dict):
+        """Returns the current state of the GUI board as a 2D list, ready for solving."""
+        board=[]
+        for row in range(9):
+            row_temp=[]
+            for column in range(9):
+                digit=cells_dict[(row, column)].get()
+                if digit=="": # empty cells are appended as zeroes, to match my sudoku solver logic
+                    row_temp.append(0)
+                else:
+                    row_temp.append(int(digit))
+            board.append(row_temp)
+        return board
+        
     # the following methods handle when a user selelcts a menu option
 
     def go_home(self):
         if messagebox.askokcancel("Confirm", "Close current window?"):
-            print("Home page requested")
+            self.destroy()
+            game=WelcomeWindow()
+            game.mainloop()
 
     def open_tutorial(self):
-        print("Tutorial page requested")
+        TutorialPage=Tutorial()
+        TutorialPage.mainloop()
 
-    def open_tricks(self):
-        print("Sudoku tricks page requested")
+    def open_about(self):
+        AboutPage=About()
+        AboutPage.mainloop()
 
     def exit_app(self):
         if messagebox.askokcancel("Confirm", "Close app?"):
             self.destroy()
 
-    def create_widgets(self): # can be overriden - or just not present in this class
-        pass
+    def open_SolverWindow(self):
+        self.destroy()
+        SudokuSolverApp=SolverWindow()
+        SudokuSolverApp.mainloop()
+
+    def open_GameWindow(self):
+        self.destroy()
+        SudokuGameApp=GameWindow()
+        SudokuGameApp.mainloop()
+
+    def open_github_link(self):
+        try:
+            webbrowser.open_new("https://github.com/melon-juice") # opens github account
+        except Exception as e:
+            print(f"Error opening link: {e}")
+
+
+class WelcomeWindow(CreateApp):
+
+    def __init__(self):
+        super().__init__()
+        self.title("Home")
+        self.geometry("320x250")
+        tkinter.Label(self, text="Welcome to the Sudoku App", font=("Consolas", 14, "bold"), fg="#008B7B").pack(pady=15)
+        tkinter.Button(self, text="Play Sudoku", bg="light grey", command=self.open_GameWindow, width=15, height=2).pack(pady=10)
+        tkinter.Button(self, text="Solve my puzzle", bg="light grey", command=self.open_SolverWindow, width=15, height=2).pack(pady=10)
+        tkinter.Label(self, text="Select an option to get started!").pack(padx=20, pady=20)
+
+class About(CreateApp):
+    def __init__(self):
+        super().__init__()
+        self.geometry("320x250")
+        tkinter.Label(self, text="About this App", font=("Consolas",12,"bold")).pack(pady=20)
+        my_text="""This app was developed by [redacted]\nfor an A-level Computer Science NEA.\nStarted: November 2025\nCompleted: January 2026
+\n\nIf you'd like to see more of my projects:"""
+        tkinter.Label(self, text=my_text).pack()
+        tkinter.Button(self, text="see my GitHub", command=self.open_github_link, cursor="hand2").pack()
+
+class Tutorial(CreateApp):
+    def __init__(self):
+        super().__init__()
+        self.geometry("320x250")
+        tkinter.Label(self, text="How to Play Sudoku", font=("Consolas",12,"bold")).pack(pady=20)
+        my_text="""This is a tutorial on how to play sudoku..."""
+        tkinter.Label(self, text=my_text).pack()
+        tkinter.Button(self, text="I'm ready to play a puzzle!", width=25, height=2, bg="light grey",
+                       command=self.open_GameWindow).pack(pady=15)
 
 class SolverWindow(CreateApp): # inherits from parent (CreateApp)
     
@@ -109,7 +174,6 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         self.cells={}
         self.display_runtime_bool=tkinter.IntVar()
 
-        
         self.header=tkinter.Label(self, text="Input your incomplete grid here:", font=("Consolas",12))
         self.header.grid(row=0, column=0, columnspan=2, pady=15)
 
@@ -122,64 +186,47 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         tkinter.Button(self, text="Clear", bg="light grey", command=lambda: self.draw9x9grid(self.grid_frame, self.cells),
                        width=10, height=2).place(x=30, y=380)
         tkinter.Button(self, text="Test for\nSolutions", bg="turquoise", command=self.solve_grid, width=10, height=2).place(x=130, y=380)
-    
-    def get_board(self):
-        """Returns the current state of the GUI board as a 2D list, ready for solving."""
-        board=[]
-        for row in range(9):
-            row_temp=[]
-            for column in range(9):
-                digit=self.cells[(row, column)].get()
-                if digit=="": # empty cells are appended as zeroes, to match my sudoku solver logic
-                    row_temp.append(0)
-                else:
-                    row_temp.append(int(digit))
-            board.append(row_temp)
-        return board
 
     def solve_grid(self):
         """Uses get_board to read user input & uses MRV solver library to find solutions. 
         (The result of pressing the "Solve" button)"""
-        
-        current_board=self.get_board()
 
-        if all(all(cell==0 for cell in row) for row in current_board): # checks the board definitely has some inputs
-            messagebox.showerror("Board Empty", "Input your board before clicking 'Solve'.")
+        current_board=self.get_board(self.cells)
+
+        # the following structure counts the number of filled fields in the board
+        zeros_list=0 
+        for row in current_board:
+            for cell in row:
+                if cell==0: zeros_list+=1
+        if zeros_list==81: # checks if the board is completely empty
+            messagebox.showerror("Board Empty!", "Please input your board before attempting to solve.")
             return
-        
-
-        flat_list = [item for sublist in current_board for item in sublist if item!=0] ##hmmm
-        if len(flat_list)<17:
-            messagebox.showwarning("Too Few Clues", "Please enter at least 17 numbers to avoid a crash.")
+        if (81-zeros_list)<17: # checks if the number of filled cells is under 17
+            messagebox.showwarning("Too Few Clues!", "Please enter at least 17 numbers to avoid a crash.")
             return
     
-        solutions_list=[]
+        solutions_list=[] # created so that if the solver fails, a "solutions_list not defined" error does not occur
         start_time=time.time() # timer begins
-        
         try:
-            solutions_list=func_timeout(4.5, solve_sudoku_MRV,args=(current_board,)) # Solve library called, with a timeout after 4.5 seconds
-
+            solutions_list=func_timeout(4.5, solve_sudoku_MRV,args=(current_board,)) # solve library called, with a timeout after 4.5 seconds
             # if the algorithm reaches this part of the code, it means a timeout did not occur and the solver algorithm was successful                                                                         
-            messagebox.showinfo("Solution found!",f"The solver algorithm found {len(solutions_list)} solutions.") 
             elapsed_time=time.time()-start_time
 
-        except FunctionTimedOut:
+        except FunctionTimedOut: # timeout message - this happens when the solver goes into a super deep recursive call
             messagebox.showerror("Solver Error", f"The solver took more than 4.5 seconds.\nYour input is unlikely to have a single solution.")
             print("The subroutine timed out after 3 seconds.")
-
-        except Exception as e:
+        except Exception as e: # any other exception. This is not expected, but is an extra precaution
             messagebox.showerror("Solver Error", f"An error ocurred when attempting to solve.\nDetails: {e}")
-
 
         if len(solutions_list)==0:
                 messagebox.showerror("No solutions", "Check your inputs and try again.")
-        else:
-            print(f"\nTotal solutions found: {len(solutions_list)}")
-            for solution in solutions_list:
-                for line in solution:
-                    print(line) # must later update this to show solution in GUI
+        else: # solution(s) found
             if self.display_runtime_bool.get()==1: # "display runtime" box is checked
-                    print(f"\nTime elapsed: {elapsed_time:.4f} seconds")
+                messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}\nTime elapsed: {elapsed_time:.3f} seconds")
+            else:
+                messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}")
+            for solution in solutions_list:
+                print(solution) # placeholder for now: must display in GUI
             
 
 class GameWindow(CreateApp):
@@ -206,20 +253,19 @@ class GameWindow(CreateApp):
 
     def change_size(self, size_string):
         """Resizes window for switching between frames"""
-        self.resizable(True, True) 
+        self.resizable(True, True) # temporarily allows resizing
         self.geometry(size_string)
-        self.update_idletasks() #### look into this
-        self.resizable(False, False)
+        self.resizable(False, False) # window dimensions are locked again
     
 class OptionsScreen(tkinter.Frame): # inherits frame
     
     def __init__(self,parent,controller):
         super().__init__(parent)
         self.controller=controller
-        self.controller.change_size("380x320")
+        self.controller.change_size("380x300")
+        self.create_undo_stack()
 
-        self.header=tkinter.Label(self, text="Select Difficulty:", font=("Consolas",12))
-        self.header.pack(pady=10)
+        tkinter.Label(self, text="Select Difficulty:", font=("Consolas",12)).pack(pady=10)
         
         for level in ("easy","medium","hard"):
             level_button=tkinter.Button(self, text=level.title(), width=10, height=2, bg="light grey",
@@ -228,14 +274,22 @@ class OptionsScreen(tkinter.Frame): # inherits frame
 
         tkinter.Label(self, text="Note that loading the puzzle may take a moment.").pack(pady=(10))
 
+    def create_undo_stack():
+        pass
+
+    def undo(self):
+        pass
+
     def begin_game(self, difficulty_level):
         try:
-            grid=generate_sudoku(difficulty_level) # generated using library
+            generated_grid=generate_sudoku(difficulty_level) # generated using library
             game_frame=self.controller.frames["GeneratedGame"]
-            self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, grid)
+            game_frame.starting_grid=generated_grid # saves the generated puzzle for future retrieval
+            self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, generated_grid)
             game_frame.grid_container.pack(padx=20)
             self.controller.change_size("380x480")
             self.controller.show_frame("GeneratedGame")
+            self.controller.start_time=time.time()
            
         except Exception as e:
             messagebox.showerror("Error", f"Could not generate puzzle.\nDetails: {e}") 
@@ -262,11 +316,47 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         button_frame.pack(padx=20, pady=20, fill="x")
 
         tkinter.Button(button_frame, text="Undo", bg="light grey", command=None, width=10, height=2).pack(side="left", padx=10, expand=True)
-        tkinter.Button(button_frame, text="Clear Board", bg="light grey", command=None, width=10, height=2).pack(side="left", padx=10, expand=True)
-        tkinter.Button(button_frame, text="Check\nSolution", bg="turquoise", command=None, width=10, height=2).pack(side="left", padx=10, expand=True)
+        tkinter.Button(button_frame, text="Clear Board", bg="light grey", command=lambda: self.controller.draw9x9grid(self.grid_container, self.cells, self.starting_grid),
+                       width=10, height=2).pack(side="left", padx=10, expand=True)
+        tkinter.Button(button_frame, text="Check\nSolution", bg="turquoise", command=self.check_solution, width=10, height=2).pack(side="left", padx=10, expand=True)
+    
+    def solve_grid(self):
+        """Solves the generated puzzle to get the solution (used in check_solution to compare against the user's answer)
+        This is a massively simplified version of the solve_grid method in the SolverWindow class."""
+    
+        solutions_list=[] # created so that if the solver fails, a "solutions_list not defined" error does not occur
+        try:
+            solutions_list=solve_sudoku_MRV(self.starting_grid) # solve library called
+            # if the algorithm reaches this part of the code, it means a timeout did not occur and the solver algorithm was successful                                                                         
+        except Exception as e: # the solver encountered an error
+            messagebox.showerror("Solver Error", f"An error ocurred when attempting to find the answer.\nDetails: {e}")
+            return
+        return solutions_list[0]
 
-# SudokuSolverApp=SolverWindow()
-# SudokuSolverApp.mainloop()
+    def check_solution(self):
+        """Compares the user's input with the correct solution - which is found via solve_grid"""
+        
+        current_board=self.controller.get_board(self.cells)
+        correct_solution=self.solve_grid()
+    
+        zeros_list=0 
+        for row in current_board:
+            for cell in row:
+                if cell==0: zeros_list+=1
+        if zeros_list!=0: # checks if the board is completely filled
+            messagebox.showerror("Board Incomplete!", "Please fully input your answer before before attempting to check.")
+            return
+        
+        if current_board==correct_solution:
+            time_elapsed=time.time()-self.controller.start_time
+            messagebox.showinfo("Solution Correct!", f"Congratulations! You finished in {time_elapsed}")
+            self.controller.draw9x9grid(current_board) # makes the whole board read-only
+        else:
+            messagebox.showinfo("Solution Inorrect", f"Your solution isn't quite right.\nCheck your inputs and try again.")
+        
 
-SudokuGameApp=GameWindow()
-SudokuGameApp.mainloop()
+        
+
+
+game=WelcomeWindow()
+game.mainloop()
