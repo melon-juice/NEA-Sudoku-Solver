@@ -43,16 +43,22 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
     def draw3x3grid(self, container, cells_dict, row, column, bgcolour, grid):
         for i in range(3):
             for j in range(3):
-
                 digit=grid[row+i][column+j] # retrieves data value within the 2D list grid
+
+                cell_value_var=tkinter.StringVar()
                 e=tkinter.Entry(container, width=5, bg=bgcolour, justify="center", 
-                                validate="key", validatecommand=self.validatecommand, borderwidth=2)
-                                
+                                  textvariable=cell_value_var, validate="key", 
+                                  validatecommand=self.validatecommand, borderwidth=2)
+                
                 if digit!=0: # number 1-9
                     e.insert(0, str(digit)) # digit added to UI display and made readonly
                     e.config(state="readonly",readonlybackground=bgcolour, fg="#008B7B", relief="flat")
+                else:
+                    if isinstance(container.master, GeneratedGame): # when the board is written to, the record_move method is called
+                        cell_value_var.trace_add("write", lambda *args, r_temp=row+i, c_temp=column+j, v_temp=cell_value_var: 
+                        container.master.record_move(r_temp, c_temp, v_temp))
                 
-                # the following updates the correspondinf position within the dictionary and UI
+                # the following updates the corresponding position within the dictionary and UI
                 e.grid(row=row+i, column=column+j, sticky="nsew", padx=1, pady=1, ipady=5)     
                 cells_dict[(row+i,column+j)]=e # dictionary is updated
 
@@ -194,14 +200,14 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         current_board=self.get_board(self.cells)
 
         # the following structure counts the number of filled fields in the board
-        zeros_list=0 
+        zeroes_list=0 
         for row in current_board:
             for cell in row:
-                if cell==0: zeros_list+=1
-        if zeros_list==81: # checks if the board is completely empty
+                if cell==0: zeroes_list+=1
+        if zeroes_list==81: # checks if the board is completely empty
             messagebox.showerror("Board Empty!", "Please input your board before attempting to solve.")
             return
-        if (81-zeros_list)<17: # checks if the number of filled cells is under 17
+        if (81-zeroes_list)<17: # checks if the number of filled cells is under 17
             messagebox.showwarning("Too Few Clues!", "Please enter at least 17 numbers to avoid a crash.")
             return
     
@@ -227,6 +233,7 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
                 messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}")
             for solution in solutions_list:
                 print(solution) # placeholder for now: must display in GUI
+                pass ###########################################################################
             
 
 class GameWindow(CreateApp):
@@ -263,22 +270,14 @@ class OptionsScreen(tkinter.Frame): # inherits frame
         super().__init__(parent)
         self.controller=controller
         self.controller.change_size("380x300")
-        self.create_undo_stack()
 
         tkinter.Label(self, text="Select Difficulty:", font=("Consolas",12)).pack(pady=10)
-        
         for level in ("easy","medium","hard"):
             level_button=tkinter.Button(self, text=level.title(), width=10, height=2, bg="light grey",
                     command=lambda l=level: self.begin_game(l))
-            level_button.pack(padx=20, pady=(10))
+            level_button.pack(padx=20, pady=10)
 
-        tkinter.Label(self, text="Note that loading the puzzle may take a moment.").pack(pady=(10))
-
-    def create_undo_stack():
-        pass
-
-    def undo(self):
-        pass
+        tkinter.Label(self, text="Note that loading the puzzle may take a moment.").pack(pady=10)
 
     def begin_game(self, difficulty_level):
         try:
@@ -300,6 +299,8 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         super().__init__(parent)
         self.controller=controller
         self.cells={} # initialised grid - this will be filled by draw9x9grid
+        self.undo_stack=undo_stack.Stack() # uses stack library to initialise undo stack
+        self.this_move_is_an_undo=False
 
         header_frame=tkinter.Frame(self)
         header_frame.pack(fill="x", pady=20)
@@ -315,7 +316,7 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         button_frame=tkinter.Frame(self)
         button_frame.pack(padx=20, pady=20, fill="x")
 
-        tkinter.Button(button_frame, text="Undo", bg="light grey", command=None, width=10, height=2).pack(side="left", padx=10, expand=True)
+        tkinter.Button(button_frame, text="Undo", bg="light grey", command=self.undo, width=10, height=2).pack(side="left", padx=10, expand=True)
         tkinter.Button(button_frame, text="Clear Board", bg="light grey", command=lambda: self.controller.draw9x9grid(self.grid_container, self.cells, self.starting_grid),
                        width=10, height=2).pack(side="left", padx=10, expand=True)
         tkinter.Button(button_frame, text="Check\nSolution", bg="turquoise", command=self.check_solution, width=10, height=2).pack(side="left", padx=10, expand=True)
@@ -339,21 +340,51 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         current_board=self.controller.get_board(self.cells)
         correct_solution=self.solve_grid()
     
-        zeros_list=0 
+        zeroes_list=0 
         for row in current_board:
             for cell in row:
-                if cell==0: zeros_list+=1
-        if zeros_list!=0: # checks if the board is completely filled
+                if cell==0: zeroes_list+=1
+        if zeroes_list!=0: # checks if the board is completely filled
             messagebox.showerror("Board Incomplete!", "Please fully input your answer before before attempting to check.")
             return
         
         if current_board==correct_solution:
             time_elapsed=time.time()-self.controller.start_time
-            messagebox.showinfo("Solution Correct!", f"Congratulations! You finished in {time_elapsed}")
-            self.controller.draw9x9grid(current_board) # makes the whole board read-only
+            formatted_time=time.strftime("%M:%S", time.gmtime(time_elapsed)) # time formatted to minutes and seconds
+            messagebox.showinfo("Solution Correct!", f"Congratulations! You finished in {formatted_time}!\nNavigate to 'Difficulties' to generate a new puzzle.")
+
+            for cell_widget in self.cells.values(): # makes the whole board read-only
+                cell_widget.config(state="readonly")
+
         else:
-            messagebox.showinfo("Solution Inorrect", f"Your solution isn't quite right.\nCheck your inputs and try again.")
+            messagebox.showinfo("Solution Incorrect", f"Your solution isn't quite right.\nCheck your inputs and try again.")
         
+    def record_move(self, row_index, column_index, cell_value_var):
+        """hmmmmm """
+
+        if self.this_move_is_an_undo:
+            return # ensures that the 'undo' move isn't pushed onto the stack
+        
+        value=cell_value_var.get()
+        if value!="":
+            self.undo_stack.push((row_index, column_index)) # saves the coordinate, so it can be cleared later
+
+    def undo(self):
+        """Checks that the current move being performed isn't an 'undo'. If ok, then pops the last updated coordinate from the undo_stack.
+        The corresponding cell is cleared: user display is updated."""
+
+        if self.undo_stack.isEmpty():
+            return
+        
+        self.this_move_is_an_undo=True
+        try:
+            retreived_coordinate=self.undo_stack.pop()
+            if retreived_coordinate:
+                entry_widget=self.cells[retreived_coordinate] # position retrieved
+                entry_widget.config(state="normal") # temporarily set the widget type to normal to allow 'delete'
+                entry_widget.delete(0, tkinter.END) # coordinate cleared
+        finally:
+            self.this_move_is_an_undo=False
 
         
 

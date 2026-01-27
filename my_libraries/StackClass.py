@@ -25,16 +25,17 @@ class Stack:
             self.size+=1
         else:
             print("Stack full- cannot add anything")
+            return None
 
     def pop(self):
-        if not self.isEmpty:
+        if not self.isEmpty():
             data=self.s[self.tosp]
-            del(data)
             self.tosp-=1
             self.size-=1
             return data
         else:
             print("Stack empty- nothing to pop")
+            return None
 
     def find_size(self):
         return self.size
