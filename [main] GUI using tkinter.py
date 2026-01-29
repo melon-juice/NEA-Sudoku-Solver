@@ -180,7 +180,7 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         self.cells={}
         self.display_runtime_bool=tkinter.IntVar()
 
-        self.header=tkinter.Label(self, text="Input your incomplete grid here:", font=("Consolas",12))
+        self.header=tkinter.Label(self, text="Sudoku Solver", font=("Consolas",12))
         self.header.grid(row=0, column=0, columnspan=2, pady=15)
 
         self.grid_frame=tkinter.Frame(self) # initailaises grid_frame, where the grid will be placed
@@ -224,16 +224,24 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         except Exception as e: # any other exception. This is not expected, but is an extra precaution
             messagebox.showerror("Solver Error", f"An error ocurred when attempting to solve.\nDetails: {e}")
 
-        if len(solutions_list)==0:
-                messagebox.showerror("No solutions", "Check your inputs and try again.")
-        else: # solution(s) found
-            if self.display_runtime_bool.get()==1: # "display runtime" box is checked
-                messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}\nTime elapsed: {elapsed_time:.3f} seconds")
-            else:
-                messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}")
-            for solution in solutions_list:
-                print(solution) # placeholder for now: must display in GUI
-                pass ###########################################################################
+        if not solutions_list:
+            messagebox.showerror("No solutions", "This puzzle is unsolvable Check your inputs and try again.")
+            return
+        
+        # solution(s) found
+        if self.display_runtime_bool.get()==1: # "display runtime" box is checked
+            messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}\nTime elapsed: {elapsed_time:.3f} seconds")
+        else:
+            messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}")
+
+        self.draw9x9grid(self.grid_frame, self.cells, solutions_list[0]) # first solution displayed in the solver window
+        for cell_widget in self.cells.values(): # makes the whole board read-only
+            cell_widget.config(state="readonly")
+
+        if len(solutions_list)>1:
+            # The puzzle has more than one solution: the user is given the choice to view each one.
+            if messagebox.askyesno("Multiple Solutions", "This puzzle has multiple solutions. Would you like to see the next one?"):
+                self.draw9x9grid(self.grid_frame, self.cells, solutions_list[1])
             
 
 class GameWindow(CreateApp):
@@ -385,8 +393,6 @@ class GeneratedGame(tkinter.Frame): # inherits frame
                 entry_widget.delete(0, tkinter.END) # coordinate cleared
         finally:
             self.this_move_is_an_undo=False
-
-        
 
 
 game=WelcomeWindow()

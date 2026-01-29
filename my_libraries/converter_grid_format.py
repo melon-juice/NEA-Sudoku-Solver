@@ -1,5 +1,8 @@
+from GridArchive import SudokuGrids
+
 def convert_grid(grid):
-    """converts format of grid between array (used during algorithm implementation) and single line (for storage)"""
+    """converts format of grid between array (used during algorithm implementation)
+    and single line (for storage)"""
 
     if type(grid)==list: # 2d array -> single line
         single_line=""
@@ -16,6 +19,21 @@ def convert_grid(grid):
                 grid_list[i].append(int(digit))
 
         return grid_list
+
+with open("SingleStringGridArchive.txt", "w", encoding="utf-8") as file:
+            file.write("")
+            
+for i in range(3,26):
+    imported_grid=SudokuGrids(i) # gets sudoku array
+    line=convert_grid(imported_grid) # converts to string
+    # add to file
+    try:
+        with open("SingleStringGridArchive.txt", "a", encoding="utf-8") as file:
+            string="\n"+str(line)
+            file.write(string)
+        print("File written successfully.")
+    except IOError as e:
+        print(f"Error writing to file: {e}")
 
 
 ####driver code
