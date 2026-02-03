@@ -1,14 +1,24 @@
-#from my_libraries.converter_grid_format import convert_grid
-from .Sudoku_Solver_using_MRV import main as solve_sudoku_MRV # used to check grid is solveable
-from .UNICODEformatting import display as UnicodeDisplay
-from .GridArchive import SudokuGrids
-
+from converter_grid_format import convert_grid
+from Sudoku_Solver_using_MRV import main as solve_sudoku_MRV # used to check grid is solveable
 import random # used to remove random cells from the solved grid
               # used to randomly substitute/swap numbers
 
+def get_random_grid():
+    """Gets a random grid from the archive and converts it to 2d list format"""
+    try:
+        with open("SingleStringGridArchive.txt", "r", encoding="utf-8") as file:
+            random_line=random.choice(file.readlines()).strip() # random line selected
+            random_grid=convert_grid(random_line) # grid converted to 2d format
+            
+        random_solved_grid=solve_sudoku_MRV(random_grid)[0] # attempts to solve grid. If the imported content was corrupted, this line will raise an exception
+        return random_solved_grid
+    
+    except Exception as e:
+        print("Error encountered:",e)
+
 def number_shuffle(grid):
     """Each number in the input grid is swapped with a random number 1-9 (it may be kept the same)
-    This is done to make the grid feel slightly different to the human solver"""
+    This is done to make the grid feel slightly different to the human user"""
 
     old_list=[1, 2, 3, 4, 5, 6, 7, 8, 9]
     new_list=random.sample(old_list,k=9) # new_list is a different shuffle each time. eg: [6, 1, 9, 4, 8, 5, 2, 7, 3]
@@ -20,7 +30,6 @@ def number_shuffle(grid):
             if digit!=0:
                 new_num=new_list[old_list.index(digit)]
                 grid[row_index][col_index]=new_num # swaps old number with corresponding new number
- 
     return grid
 
 def generate_sudoku(full_grid, difficulty):
@@ -47,7 +56,7 @@ def generate_sudoku(full_grid, difficulty):
         grid[row][column]=0 # this coordinate is switched for an empty cell
 
         solutions=solve_sudoku_MRV(grid)
-        if len(solutions)!=1:
+        if len(solutions)!=1: # sudoku no longer valid
             #print("Not solveable, iteration no.",i) # used for debugging
             grid[row][column]=num_temp # cell is changed back
             iterations+=1 # iterations is incremented again
@@ -56,11 +65,7 @@ def generate_sudoku(full_grid, difficulty):
     return grid
 
 def main(difficulty_level):
-    archive_num=random.randint(3,25)
-    random_unsolved_grid=SudokuGrids(archive_num)
-    grid=solve_sudoku_MRV(random_unsolved_grid)[0] # retrieves a random unsolved sudoku from my grid archive and solves it
+    """retrieves a random unsolved sudoku from the grid archive and manipulates it to generate a fresh, new grid"""
+    grid=get_random_grid()
     return generate_sudoku(grid, difficulty_level)
-
-
-
 

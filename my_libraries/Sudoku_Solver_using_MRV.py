@@ -1,6 +1,4 @@
 import copy # used to store *multiple solutions* for a particular sudoku grid input
-from .UNICODEformatting import display as UnicodeDisplay
-
 
 # This file solves a sudoku grid inputted, provided that:
 ### The grid is passed in as a 2D list
@@ -102,5 +100,3 @@ def main(sudoku_grid): # external input here
     solutions_list=[] # mutable global list
     dfs_solution_finder(sudoku_grid, solutions_list)
     return solutions_list
-
-

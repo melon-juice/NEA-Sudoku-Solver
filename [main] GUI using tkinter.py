@@ -12,6 +12,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         super().__init__()
         self.title("Sudoku Solver")
         self.geometry("380x450")
+        self.configure(bg="light blue")
         self.resizable(False, False)
         self.validatecommand=(self.register(self.validate_number),"%P") # moved to parent class so that it is applied to all user inputs
                                         # handles input validation using Tcl
