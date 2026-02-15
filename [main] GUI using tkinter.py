@@ -3,8 +3,10 @@ from tkinter import messagebox # used to output appropriate messages to the user
 import time # used to track time elapsed by solver algorithm
 import webbrowser # used for hyperlink in 'about' page
 from func_timeout import func_timeout, FunctionTimedOut # used to output a timeout error when necessary
+
 from my_libraries.Sudoku_Solver_using_MRV import main as solve_sudoku_MRV
 from my_libraries.sudoku_generator import main as generate_sudoku
+from my_libraries.converter_grid_format import convert_grid # used to add new grids to the archive
 import my_libraries.StackClass as undo_stack
 
 class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
@@ -12,7 +14,6 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         super().__init__()
         self.title("Sudoku Solver")
         self.geometry("380x450")
-        self.configure(bg="light blue")
         self.resizable(False, False)
         self.validatecommand=(self.register(self.validate_number),"%P") # moved to parent class so that it is applied to all user inputs
                                         # handles input validation using Tcl
@@ -159,7 +160,7 @@ class About(CreateApp):
         super().__init__()
         self.geometry("320x250")
         tkinter.Label(self, text="About this App", font=("Consolas",12,"bold")).pack(pady=20)
-        my_text="""This app was developed by [redacted]\nfor an A-level Computer Science NEA.\nStarted: November 2025\nCompleted: January 2026
+        my_text="""This app was developed by Hajar Elkhatib\nfor an A-level Computer Science NEA.\nStarted: November 2025\nCompleted: January 2026
 \n\nIf you'd like to see more of my projects:"""
         tkinter.Label(self, text=my_text).pack()
         tkinter.Button(self, text="see my GitHub", command=self.open_github_link, cursor="hand2").pack()
@@ -226,7 +227,7 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
             messagebox.showerror("Solver Error", f"An error ocurred when attempting to solve.\nDetails: {e}")
 
         if not solutions_list:
-            messagebox.showerror("No solutions", "This puzzle is unsolvable Check your inputs and try again.")
+            messagebox.showinfo("No solutions", "Check your inputs and try again.")
             return
         
         # solution(s) found
@@ -236,13 +237,37 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
             messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}")
 
         self.draw9x9grid(self.grid_frame, self.cells, solutions_list[0]) # first solution displayed in the solver window
-        for cell_widget in self.cells.values(): # makes the whole board read-only
-            cell_widget.config(state="readonly")
+        for cell_widget in self.cells.values(): 
+            cell_widget.config(state="readonly") # makes the whole board read-only
 
         if len(solutions_list)>1:
             # The puzzle has more than one solution: the user is given the choice to view each one.
             if messagebox.askyesno("Multiple Solutions", "This puzzle has multiple solutions. Would you like to see the next one?"):
                 self.draw9x9grid(self.grid_frame, self.cells, solutions_list[1])
+        
+        else:
+
+            # grid has one solution
+            # new user-inputted grid is added to the archive file (as a single line)
+            # this means it can be used in future to generate new puzzles
+
+            already_in_file=False
+            try:
+                
+                with open(r"./my_libraries/SingleStringGridArchive.txt", "r", encoding="utf-8") as file:
+                    single_line=convert_grid(current_board)
+                    for file_line in file.readlines():
+                        file_line=file_line.strip()
+                        if single_line==file_line:
+                            already_in_file==True
+                    file.close()
+
+                if not already_in_file:
+                    with open(r"./my_libraries/SingleStringGridArchive.txt", "a", encoding="utf-8") as file:
+                        file.writelines(single_line+"\n")
+                        file.close()
+            except:
+                messagebox.showinfo("File Not Found","Sudoku Archive file could not be opened.\nProceeding without save.")
             
 
 class GameWindow(CreateApp):
@@ -260,16 +285,16 @@ class GameWindow(CreateApp):
 
         # each frame is initialised and stored
         for F in (OptionsScreen,GeneratedGame):
-            page_name=F.__name__  # retreived the string "OptionsScreen", etc.
+            page_name=F.__name__  # retreives the string "OptionsScreen", etc.
             frame=F(parent=container,controller=self)
             self.frames[page_name]=frame # frame is stored in dictionary
-            frame.grid(row=0,column=0,sticky="nsew") # frame is placed (this line is necessary)
+            frame.grid(row=0,column=0,sticky="nsew") # frame is placed in on-screen grid (this line is necessary)
        
         self.show_frame("OptionsScreen") # the log in page is placed at the top
 
     def change_size(self, size_string):
         """Resizes window for switching between frames"""
-        self.resizable(True, True) # temporarily allows resizing
+        self.resizable(True, True) # temporarily allows resizing (in both x and y directions)
         self.geometry(size_string)
         self.resizable(False, False) # window dimensions are locked again
     
@@ -290,7 +315,7 @@ class OptionsScreen(tkinter.Frame): # inherits frame
 
     def begin_game(self, difficulty_level):
         try:
-            generated_grid=generate_sudoku(difficulty_level) # generated using library
+            generated_grid=generate_sudoku(difficulty_level) # sudoku puzzle generated using logic stored in library
             game_frame=self.controller.frames["GeneratedGame"]
             game_frame.starting_grid=generated_grid # saves the generated puzzle for future retrieval
             self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, generated_grid)

@@ -1,14 +1,18 @@
-from converter_grid_format import convert_grid
-from Sudoku_Solver_using_MRV import main as solve_sudoku_MRV # used to check grid is solveable
+# imports random, converter_grid_format, and Sudoku_Solver_using_MRV
+
 import random # used to remove random cells from the solved grid
               # used to randomly substitute/swap numbers
+from .converter_grid_format import convert_grid
+from .Sudoku_Solver_using_MRV import main as solve_sudoku_MRV # used to check grid is solveable
 
 def get_random_grid():
     """Gets a random grid from the archive and converts it to 2d list format"""
     try:
-        with open("SingleStringGridArchive.txt", "r", encoding="utf-8") as file:
-            random_line=random.choice(file.readlines()).strip() # random line selected
-            random_grid=convert_grid(random_line) # grid converted to 2d format
+        with open("./SingleStringGridArchive.txt", "r", encoding="utf-8") as file: ########open('./Source/Documents/hello.txt')
+            random_line="hello world"
+            while len(random_line)!=81: # ensures the random line selected isn't simply a line break with no contents
+                random_line=random.choice(file.readlines()).strip() # random line selected
+                random_grid=convert_grid(random_line) # grid converted to 2d format
             
         random_solved_grid=solve_sudoku_MRV(random_grid)[0] # attempts to solve grid. If the imported content was corrupted, this line will raise an exception
         return random_solved_grid
@@ -32,7 +36,7 @@ def number_shuffle(grid):
                 grid[row_index][col_index]=new_num # swaps old number with corresponding new number
     return grid
 
-def generate_sudoku(full_grid, difficulty):
+def generate_sudoku(full_grid, difficulty="easy"):
     """Random cells are removed from the sudoku grid until it has as few digits as possible whislt still having exactly 1 solution."""
 
     if difficulty=="easy":
@@ -68,4 +72,3 @@ def main(difficulty_level):
     """retrieves a random unsolved sudoku from the grid archive and manipulates it to generate a fresh, new grid"""
     grid=get_random_grid()
     return generate_sudoku(grid, difficulty_level)
-

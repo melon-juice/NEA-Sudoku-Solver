@@ -1,4 +1,5 @@
 # from GridArchive import SudokuGrids
+# current code does not need any imports
 
 def convert_grid(grid):
     """converts format of grid between array (used during algorithm implementation)
