@@ -8,7 +8,7 @@ from .Sudoku_Solver_using_MRV import main as solve_sudoku_MRV # used to check gr
 def get_random_grid():
     """Gets a random grid from the archive and converts it to 2d list format"""
     try:
-        with open("./SingleStringGridArchive.txt", "r", encoding="utf-8") as file: ########open('./Source/Documents/hello.txt')
+        with open("./SingleStringGridArchive.txt", "r", encoding="utf-8") as file:
             random_line="hello world"
             while len(random_line)!=81: # ensures the random line selected isn't simply a line break with no contents
                 random_line=random.choice(file.readlines()).strip() # random line selected

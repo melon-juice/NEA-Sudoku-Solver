@@ -1,113 +1,61 @@
-import tkinter
-from tkinter import messagebox # used to output appropriate messages to the user
-import time # used to track time elapsed by solver algorithm
-import webbrowser # used for hyperlink in 'about' page
+# python imports
+import tkinter # used to create Graphical User Interface (GUI)
+from tkinter import messagebox # used to output appropriate messages to the user within the GUI
+import time # used to track time elapsed by my sudoku solver algorithm
 from func_timeout import func_timeout, FunctionTimedOut # used to output a timeout error when necessary
 
+# custom file imports
 from my_libraries.Sudoku_Solver_using_MRV import main as solve_sudoku_MRV
 from my_libraries.sudoku_generator import main as generate_sudoku
 from my_libraries.converter_grid_format import convert_grid # used to add new grids to the archive
-import my_libraries.StackClass as undo_stack
+import my_libraries.StackClass as undo_stack # enables 'undo' feature
 
 class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
+    """This is the parent class of the entire sudoku app.
+    The constructor:
+        > sets the default title & dimensions for any windows made in child classes
+        > adds a drop-down menu to the top left corner of every window
+        > implements input validation for all inputs in the app
+    The methods in this class are ones used by multiple different child classes and are placed here for reusability."""
+
     def __init__(self):
         super().__init__()
         self.title("Sudoku Solver")
         self.geometry("380x450")
         self.resizable(False, False)
-        self.validatecommand=(self.register(self.validate_number),"%P") # moved to parent class so that it is applied to all user inputs
-                                        # handles input validation using Tcl
-                                        # the "%P" part stands for the expected result before validating
         self.create_menu()
+        self.validatecommand=(self.register(self.validate_number),"%P") # applies to all user inputs in the app
+                                                                        # handles input validation using Tcl
+                                                                        # the "%P" part stands for the expected result before validating
         
-    def validate_number(self, P):
+    def validate_number(self, P): # input validation used consistently throughout the whole app
         """Only allows a single digit in the inculsive range 1-9 OR an empty string"""
-        # essentially checks for single digit, then excludes 0
-        return (P.isdigit() and len(P)==1 and P!="0") or P==""
+        if (P.isdigit() and len(P)==1 and P!="0") or P=="":
+            return True
+        else:
+            return False
 
-    def show_frame(self,frame_name):
-        """switches between frames by raising them to the top"""
+    def show_frame(self, frame_name):
+        """Switches between frames by raising them to the top - used throughout the app to hide/show widgets"""
         frame=self.frames[frame_name]
         frame.tkraise() # frame is sent to the top, making it the frame that the user views
 
     def create_menu(self):
+        """dropdown elements: Home / Tutorial / Sudoku Tricks // Exit App"""
         self.menubar=tkinter.Menu(self)
-        # dropdown elements: Home / Tutorial / Sudoku Tricks // Exit App
         self.app_menu=tkinter.Menu(self.menubar, tearoff=0)
+    
         self.app_menu.add_command(label="Home", command=self.go_home)
         self.app_menu.add_command(label="Tutorial", command=self.open_tutorial)
         self.app_menu.add_command(label="About", command=self.open_about)
         self.app_menu.add_separator()
         self.app_menu.add_command(label="Exit App", command=self.exit_app)
+
         self.menubar.add_cascade(label="Menu", menu=self.app_menu)
         self.config(menu=self.menubar)
 
-    def draw3x3grid(self, container, cells_dict, row, column, bgcolour, grid):
-        for i in range(3):
-            for j in range(3):
-                digit=grid[row+i][column+j] # retrieves data value within the 2D list grid
 
-                cell_value_var=tkinter.StringVar()
-                e=tkinter.Entry(container, width=5, bg=bgcolour, justify="center", 
-                                  textvariable=cell_value_var, validate="key", 
-                                  validatecommand=self.validatecommand, borderwidth=2)
-                
-                if digit!=0: # number 1-9
-                    e.insert(0, str(digit)) # digit added to UI display and made readonly
-                    e.config(state="readonly",readonlybackground=bgcolour, fg="#008B7B", relief="flat")
-                else:
-                    if isinstance(container.master, GeneratedGame): # when the board is written to, the record_move method is called
-                        cell_value_var.trace_add("write", lambda *args, r_temp=row+i, c_temp=column+j, v_temp=cell_value_var: 
-                        container.master.record_move(r_temp, c_temp, v_temp))
-                
-                # the following updates the corresponding position within the dictionary and UI
-                e.grid(row=row+i, column=column+j, sticky="nsew", padx=1, pady=1, ipady=5)     
-                cells_dict[(row+i,column+j)]=e # dictionary is updated
-
-    def draw9x9grid(self,container,cells_dict,grid=None):
-        """grid display method used to show the grid in a consistent way.
-        container is used to determine the correct frame to draw into.
-        If a specific grid is passed in, it will be displayed, or else an empty grid is displayed."""
-        
-        if grid==None: # default to empty grid if none provided
-            grid=[[0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0],
-                  [0,0,0,0,0,0,0,0,0]]
-        
-        for widget in container.winfo_children(): # this gets rid of any existing widgets in the container, for game refreshes
-            widget.destroy()
-        cells_dict.clear()
-        
-        colour="#e3e3e3"
-        for rowNo in range(0,9,3):
-            for colNo in range(0,9,3):
-                self.draw3x3grid(container, cells_dict, rowNo, colNo, colour, grid) # relevant paramteters are passed into 3x3 drawer
-                if colour=="#e3e3e3":
-                    colour="#bababa"
-                else:
-                    colour="#e3e3e3"
-
-    def get_board(self,cells_dict):
-        """Returns the current state of the GUI board as a 2D list, ready for solving."""
-        board=[]
-        for row in range(9):
-            row_temp=[]
-            for column in range(9):
-                digit=cells_dict[(row, column)].get()
-                if digit=="": # empty cells are appended as zeroes, to match my sudoku solver logic
-                    row_temp.append(0)
-                else:
-                    row_temp.append(int(digit))
-            board.append(row_temp)
-        return board
-        
-    # the following methods handle when a user selelcts a menu option
+    """The following four methods (go_home,open_tutorial,open_about,exit_app) each handle when a user selects a menu option"""
 
     def go_home(self):
         if messagebox.askokcancel("Confirm", "Close current window?"):
@@ -127,6 +75,85 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         if messagebox.askokcancel("Confirm", "Close app?"):
             self.destroy()
 
+    """The following two methods (draw3x3grid,draw9x9grid) are used together to display a sudoku grid to the user"""
+
+    def draw3x3grid(self, container, cells_dict, row, column, bgcolour, grid):
+        """displays a block of 9 cells"""
+        for i in range(3):
+            for j in range(3):
+                digit=grid[row+i][column+j] # retrieves data value within the 2D list grid
+
+                cell_value_var=tkinter.StringVar()
+                # StringVar command tracks changes to the cell and in turn updates cells_dict(defined at the end of this method)
+                e=tkinter.Entry(container, width=5, bg=bgcolour, justify="center",
+                                textvariable=cell_value_var, validate="key", # validatecommand is triggered by the press key event
+                                validatecommand=self.validatecommand, borderwidth=2)
+                
+                if digit!=0: # number 1-9
+                    e.insert(0, str(digit)) # digit added to UI display and made readonly
+                    e.config(state="readonly",readonlybackground=bgcolour, fg="#008B7B", relief="flat")
+                else:
+                    if isinstance(container.master, GeneratedGame): # checks if the board is part of the generated game window
+                        # this means the user has manually inserted a value, so the record_move method is called
+                        # changes are stored, in case the user later presses 'undo'
+                        r_temp=row+i
+                        c_temp=column+j
+                        cell_value_var.trace_add("write", container.master.record_move(r_temp, c_temp, cell_value_var))
+                        # 'write' mode means the event (in this case, record_move) is triggered when the field is modified
+                
+                e.grid(row=row+i, column=column+j, sticky="nsew", padx=1, pady=1, ipady=5) # updates the corresponding position within the user interface
+                cells_dict[(row+i,column+j)]=e # grid dictionary is updated
+
+    def draw9x9grid(self,container,cells_dict,grid=None):
+        """displays a grid of 9 blocks - using draw3x3grid method (above).
+        The parameter 'container' is passed in to determine the correct frame to draw into.
+        If a grid is passed in, it will be displayed, otherwise an empty grid is displayed."""
+        
+        if grid==None: # default to empty grid if none provided
+            grid=[[0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0],
+                  [0,0,0,0,0,0,0,0,0]]
+        
+        # the following gets rid of any existing widgets in the container where the grid will be drawn,
+        # preventing unused widgets from overlaying and causing the game to function unexpectedly.
+        for widget in container.winfo_children(): 
+            widget.destroy()
+        cells_dict.clear() # cell dictionary reset
+        
+        colour="#e3e3e3"
+        for rowNo in range(0,9,3):
+            for colNo in range(0,9,3):
+                self.draw3x3grid(container, cells_dict, rowNo, colNo, colour, grid) # relevant paramteters are passed into 3x3 block drawer
+                # background colour switched to visually show where blocks begin/end
+                if colour=="#e3e3e3":
+                    colour="#bababa"
+                else:
+                    colour="#e3e3e3"
+
+    def get_board(self,cells_dict):
+        """Returns the current state of the GUI board as a 2D list, ready for solving."""
+        board=[]
+        for row in range(9):
+            row_temp=[]
+            for column in range(9):
+                digit=cells_dict[(row, column)].get()
+                if digit=="": # empty cells are appended as zeroes, to match my sudoku solver logic
+                    row_temp.append(0)
+                else:
+                    row_temp.append(int(digit))
+            board.append(row_temp)
+        return board
+    
+
+    """The following two methods (open_SolverWindow,open_GameWindow) are called if the user selects "play sudoku" or "solve my puzzle".
+    Each method creates an object of the appropriate class to open a new window, and closes down the welcome window."""
+
     def open_SolverWindow(self):
         self.destroy()
         SudokuSolverApp=SolverWindow()
@@ -137,14 +164,12 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         SudokuGameApp=GameWindow()
         SudokuGameApp.mainloop()
 
-    def open_github_link(self):
-        try:
-            webbrowser.open_new("https://github.com/melon-juice") # opens github account
-        except Exception as e:
-            print(f"Error opening link: {e}")
-
 
 class WelcomeWindow(CreateApp):
+    """This is the first window opened when the app starts.
+    It features a welcome message and the user is presented with two options:
+    > Play a generated sudoku game (GameWindow)
+    > Use the sudoku solver to solve an existing puzzle (SolverWindow)."""
 
     def __init__(self):
         super().__init__()
@@ -156,16 +181,18 @@ class WelcomeWindow(CreateApp):
         tkinter.Label(self, text="Select an option to get started!").pack(padx=20, pady=20)
 
 class About(CreateApp):
+    """This window is opened if the drop-down menu option 'About' is selected. Contains a few simple widgets."""
+    
     def __init__(self):
         super().__init__()
         self.geometry("320x250")
         tkinter.Label(self, text="About this App", font=("Consolas",12,"bold")).pack(pady=20)
-        my_text="""This app was developed by Hajar Elkhatib\nfor an A-level Computer Science NEA.\nStarted: November 2025\nCompleted: January 2026
-\n\nIf you'd like to see more of my projects:"""
+        my_text="""This app was developed by Hajar Elkhatib\nfor an A-level Computer Science NEA.\nStarted: November 2025\nCompleted: February 2026"""
         tkinter.Label(self, text=my_text).pack()
-        tkinter.Button(self, text="see my GitHub", command=self.open_github_link, cursor="hand2").pack()
 
 class Tutorial(CreateApp):
+    """This window is opened if the drop-down menu option 'Tutorial' is selected."""
+
     def __init__(self):
         super().__init__()
         self.geometry("320x250")
@@ -176,11 +203,26 @@ class Tutorial(CreateApp):
                        command=self.open_GameWindow).pack(pady=15)
 
 class SolverWindow(CreateApp): # inherits from parent (CreateApp)
+    """
+    Solver window is one of two main windows in the app. It contains a grid where the user can enter their custom unsolved grid.
+    The user can choose to:
+    > attempt to solve (there is also a checkbox option to display runtime, which is used to monitor the solver algorithm's speed)
+    > clear board
+    
+    When attempting to solve:
+    1. Input validation is applied where appropriate, like ensuring that the grid has enough filled squares.
+    > One solution is found: The filled grid is displayed in a read-only format.
+        This means the inputted grid has exactly one solution - i.e. it is considered a 'good' puzzle, and it is added to the grid archive.
+    > More than one solution is found: the first solution is displayed, and the user can proceed to view the next one.
+    > The solver algorithm takes more than 4 seconds to respond: meaning it likely entered an ultra-deep recursive call.
+        This means the inputted grid is unlikely to have a small number of solutions - a time-out message is displayed.
+        This makes use of the func_timeout library to prevent crashes from occurring.
+    """
     
     def __init__(self):
         super().__init__()
         self.cells={}
-        self.display_runtime_bool=tkinter.IntVar()
+        self.display_runtime_bool=tkinter.IntVar() # boolean variable which monitors whether the 'display runtime' checkbox is checked
 
         self.header=tkinter.Label(self, text="Sudoku Solver", font=("Consolas",12))
         self.header.grid(row=0, column=0, columnspan=2, pady=15)
@@ -189,14 +231,14 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         self.grid_frame.grid(row=1, column=0, padx=20, pady=5)
         self.draw9x9grid(self.grid_frame,self.cells)
 
-        # the following creates the controls: checkbox for timer / solve button
+        # the following creates the 'display runtime' checkbox and solve button
         tkinter.Checkbutton(self, text="Display runtime", variable=self.display_runtime_bool, width=15, height=2).place(x=220, y=380)
         tkinter.Button(self, text="Clear", bg="light grey", command=lambda: self.draw9x9grid(self.grid_frame, self.cells),
                        width=10, height=2).place(x=30, y=380)
         tkinter.Button(self, text="Test for\nSolutions", bg="turquoise", command=self.solve_grid, width=10, height=2).place(x=130, y=380)
 
     def solve_grid(self):
-        """Uses get_board to read user input & uses MRV solver library to find solutions. 
+        """Uses parent method get_board to read user input & uses MRV solver library to find solutions. 
         (The result of pressing the "Solve" button)"""
 
         current_board=self.get_board(self.cells)
@@ -205,9 +247,10 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         zeroes_list=0 
         for row in current_board:
             for cell in row:
-                if cell==0: zeroes_list+=1
+                if cell==0:
+                    zeroes_list+=1
         if zeroes_list==81: # checks if the board is completely empty
-            messagebox.showerror("Board Empty!", "Please input your board before attempting to solve.")
+            messagebox.showwarning("Board Empty!", "Please input your board before attempting to solve.")
             return
         if (81-zeroes_list)<17: # checks if the number of filled cells is under 17
             messagebox.showwarning("Too Few Clues!", "Please enter at least 17 numbers to avoid a crash.")
@@ -216,13 +259,14 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         solutions_list=[] # created so that if the solver fails, a "solutions_list not defined" error does not occur
         start_time=time.time() # timer begins
         try:
-            solutions_list=func_timeout(4.5, solve_sudoku_MRV,args=(current_board,)) # solve library called, with a timeout after 4.5 seconds
+            solutions_list=func_timeout(4, solve_sudoku_MRV,args=(current_board,)) # solve library called, with timeout after 4 seconds
+            # a comma is added here to tell func_timeout not to unpack the array ↑
+            
             # if the algorithm reaches this part of the code, it means a timeout did not occur and the solver algorithm was successful                                                                         
             elapsed_time=time.time()-start_time
 
         except FunctionTimedOut: # timeout message - this happens when the solver goes into a super deep recursive call
-            messagebox.showerror("Solver Error", f"The solver took more than 4.5 seconds.\nYour input is unlikely to have a single solution.")
-            print("The subroutine timed out after 3 seconds.")
+            messagebox.showerror("Solver Error", f"The solver took more than 4 seconds.\nYour input is unlikely to have a single solution.")
         except Exception as e: # any other exception. This is not expected, but is an extra precaution
             messagebox.showerror("Solver Error", f"An error ocurred when attempting to solve.\nDetails: {e}")
 
@@ -240,57 +284,68 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         for cell_widget in self.cells.values(): 
             cell_widget.config(state="readonly") # makes the whole board read-only
 
-        if len(solutions_list)>1:
-            # The puzzle has more than one solution: the user is given the choice to view each one.
-            if messagebox.askyesno("Multiple Solutions", "This puzzle has multiple solutions. Would you like to see the next one?"):
-                self.draw9x9grid(self.grid_frame, self.cells, solutions_list[1])
+        if len(solutions_list)>1: # The puzzle has more than one solution: the user is given the choice to view each one.
+            for solution in solutions_list[1:]:
+                if messagebox.showinfo("Multiple Solutions", "This puzzle has multiple solutions. Would you like to see the next one?"):
+                    self.draw9x9grid(self.grid_frame, self.cells, solution) # next solution is displayed
         
-        else:
+        else: # grid has one unique solution
 
-            # grid has one solution
-            # new user-inputted grid is added to the archive file (as a single line)
-            # this means it can be used in future to generate new puzzles
+            # The following code adds the new user-inputted grid to the archive file (as a single line)
+            # ... so that it can be used in future to generate new puzzles
 
-            already_in_file=False
+            already_in_file=False # boolean variable used to ensure the archive doesn't get updated with a duplicate
             try:
-                
                 with open(r"./my_libraries/SingleStringGridArchive.txt", "r", encoding="utf-8") as file:
-                    single_line=convert_grid(current_board)
+                    single_line=convert_grid(current_board) # grid converted to single line
                     for file_line in file.readlines():
                         file_line=file_line.strip()
                         if single_line==file_line:
-                            already_in_file==True
+                            already_in_file==True # this means the grid won't be added to the archive
                     file.close()
 
                 if not already_in_file:
                     with open(r"./my_libraries/SingleStringGridArchive.txt", "a", encoding="utf-8") as file:
-                        file.writelines(single_line+"\n")
+                        file.writelines(single_line+"\n") # singline line grid is added to the end of the file
                         file.close()
-            except:
-                messagebox.showinfo("File Not Found","Sudoku Archive file could not be opened.\nProceeding without save.")
+                        
+            except: # error whilst opening file - it may not be stored in the correct location.
+                messagebox.showinfo("File Not Found","SingleStringGridArchive.txt could not be opened.\nProceeding without save.")
             
 
 class GameWindow(CreateApp):
+    """
+    Game window is the second of two main windows in the app. It utilises my sudoku generator library to generate puzzles for the player.
+    The OptionsScreen frame of the Game Window is a choice screen of Easy / Medium / Hard .
+    Upon clicking one of these options, the player raises a frame and triggers the generation of a new puzzle.
+    The GeneratedGame frame contains:
+    > an unsolved grid with some cells in a read-only format, and the rest as enterable fields
+    > a 'check answer' button
+        The grid is checked for any empty/unfilled cells; in which case an appropriate warning message is returned.
+    > a clear board button
+    > a 'return to difficulties' button
+    > an undo button, which uses a stack data structure to keep track of changes made to the board (more detail given in that section of the code)
+    """
     
     def __init__(self):
         super().__init__()
-        self.title("Sudoku Game")
+        self.title("Sudoku Game") # window title from parent class is overwritten
         
-        # a container is initialised to hold all my frames within the game window
+        # a container is initialised to hold all frames within the game window
         container=tkinter.Frame(self)
         container.pack(fill="both", expand=True) # container expanded to fill the whole window
-        container.grid_columnconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1) # contents of the contianer are centred
         container.grid_rowconfigure(0, weight=1)
         self.frames={} # all frames are managed in a dictionary
 
         # each frame is initialised and stored
         for F in (OptionsScreen,GeneratedGame):
             page_name=F.__name__  # retreives the string "OptionsScreen", etc.
-            frame=F(parent=container,controller=self)
+            frame=F(parent=container, controller=self)
             self.frames[page_name]=frame # frame is stored in dictionary
-            frame.grid(row=0,column=0,sticky="nsew") # frame is placed in on-screen grid (this line is necessary)
+            frame.grid(row=0, column=0, sticky="nsew") # the frame is placed in GUI grid (this line is necessary)
        
-        self.show_frame("OptionsScreen") # the log in page is placed at the top
+        self.show_frame("OptionsScreen") # the diffculty options page is placed at the top
 
     def change_size(self, size_string):
         """Resizes window for switching between frames"""
@@ -300,7 +355,7 @@ class GameWindow(CreateApp):
     
 class OptionsScreen(tkinter.Frame): # inherits frame
     
-    def __init__(self,parent,controller):
+    def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller=controller
         self.controller.change_size("380x300")
@@ -308,7 +363,7 @@ class OptionsScreen(tkinter.Frame): # inherits frame
         tkinter.Label(self, text="Select Difficulty:", font=("Consolas",12)).pack(pady=10)
         for level in ("easy","medium","hard"):
             level_button=tkinter.Button(self, text=level.title(), width=10, height=2, bg="light grey",
-                    command=lambda l=level: self.begin_game(l))
+                    command=lambda: self.begin_game(level)) # lambda function executes begin_game when button is pressed 
             level_button.pack(padx=20, pady=10)
 
         tkinter.Label(self, text="Note that loading the puzzle may take a moment.").pack(pady=10)
@@ -318,11 +373,11 @@ class OptionsScreen(tkinter.Frame): # inherits frame
             generated_grid=generate_sudoku(difficulty_level) # sudoku puzzle generated using logic stored in library
             game_frame=self.controller.frames["GeneratedGame"]
             game_frame.starting_grid=generated_grid # saves the generated puzzle for future retrieval
-            self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, generated_grid)
+            self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, generated_grid) # puzzle displayed
             game_frame.grid_container.pack(padx=20)
             self.controller.change_size("380x480")
-            self.controller.show_frame("GeneratedGame")
-            self.controller.start_time=time.time()
+            self.controller.show_frame("GeneratedGame") # this frame is raised, hiding the difficulties options frame
+            self.controller.start_time=time.time() # timer begins
            
         except Exception as e:
             messagebox.showerror("Error", f"Could not generate puzzle.\nDetails: {e}") 
@@ -336,6 +391,12 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         self.undo_stack=undo_stack.Stack() # uses stack library to initialise undo stack
         self.this_move_is_an_undo=False
 
+        """The Generated game page has 3 main sections:
+        > header_frame: contains return button to switch frames, and some simple text
+        > grid_container: generated puzzle goes here
+        > button_frame: contains buttons at the bottom of the screen to: undo / clear / check answer
+        These sections are initialised seperately and hold widgets independently. This allows for easier formatting and debugging."""
+        
         header_frame=tkinter.Frame(self)
         header_frame.pack(fill="x", pady=20)
 
@@ -362,64 +423,68 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         solutions_list=[] # created so that if the solver fails, a "solutions_list not defined" error does not occur
         try:
             solutions_list=solve_sudoku_MRV(self.starting_grid) # solve library called
-            # if the algorithm reaches this part of the code, it means a timeout did not occur and the solver algorithm was successful                                                                         
+            # if the algorithm reaches this part of the code, it means a timeout did not occur and the solver algorithm was successful
         except Exception as e: # the solver encountered an error
             messagebox.showerror("Solver Error", f"An error ocurred when attempting to find the answer.\nDetails: {e}")
             return
         return solutions_list[0]
 
     def check_solution(self):
-        """Compares the user's input with the correct solution - which is found via solve_grid"""
+        """Compares the user's input with the correct solution - which is found via the solve_grid method."""
         
-        current_board=self.controller.get_board(self.cells)
-        correct_solution=self.solve_grid()
-    
-        zeroes_list=0 
+        current_board=self.controller.get_board(self.cells) # calls method from CreateApp to retrieve what the user has entered.
+        number_of_zeroes=0
         for row in current_board:
             for cell in row:
-                if cell==0: zeroes_list+=1
-        if zeroes_list!=0: # checks if the board is completely filled
+                if cell==0:
+                    number_of_zeroes+=1
+        if number_of_zeroes!=0: # checks if the board is completely filled
             messagebox.showerror("Board Incomplete!", "Please fully input your answer before before attempting to check.")
             return
         
+        correct_solution=self.solve_grid() 
+        # note: the way the sudoku generator works ensures the generated puzzle has one unique solution, so we don't need to worry about multiple vaild solutions.
         if current_board==correct_solution:
-            time_elapsed=time.time()-self.controller.start_time
+            time_elapsed=time.time()-self.controller.start_time # the user's solve time is calculated
             formatted_time=time.strftime("%M:%S", time.gmtime(time_elapsed)) # time formatted to minutes and seconds
-            messagebox.showinfo("Solution Correct!", f"Congratulations! You finished in {formatted_time}!\nNavigate to 'Difficulties' to generate a new puzzle.")
-
-            for cell_widget in self.cells.values(): # makes the whole board read-only
+            messagebox.showinfo("Solution Correct!", f"Congratulations! You finished in {formatted_time}!\nNavigate back to difficulties to generate a new puzzle.")
+            # the whole board is set to read-only
+            for cell_widget in self.cells.values():
                 cell_widget.config(state="readonly")
-
         else:
-            messagebox.showinfo("Solution Incorrect", f"Your solution isn't quite right.\nCheck your inputs and try again.")
+            messagebox.showinfo("Solution Incorrect", f"That's not quite right.\nCheck your inputs and try again.")
         
     def record_move(self, row_index, column_index, cell_value_var):
-        """hmmmmm """
+        """This method is triggered whenever a change is detected in the board. It first checks that the current move being performed isn't an 'undo'.
+        If ok, it pushes the coordinate where the change occurred onto the undo stack. This method makes no changes to the GUI."""
 
         if self.this_move_is_an_undo:
             return # ensures that the 'undo' move isn't pushed onto the stack
         
         value=cell_value_var.get()
         if value!="":
-            self.undo_stack.push((row_index, column_index)) # saves the coordinate, so it can be cleared later
+            self.undo_stack.push((row_index, column_index)) # saves the coordinate where the change was made, so it can be cleared later
 
     def undo(self):
-        """Checks that the current move being performed isn't an 'undo'. If ok, then pops the last updated coordinate from the undo_stack.
-        The corresponding cell is cleared: user display is updated."""
+        """Checks that the current move being performed isn't an 'undo'. If ok, it pops the last updated coordinate from the undo_stack.
+        The corresponding cell is cleared, and the user display is updated."""
 
         if self.undo_stack.isEmpty():
             return
         
         self.this_move_is_an_undo=True
         try:
-            retreived_coordinate=self.undo_stack.pop()
+            retreived_coordinate=self.undo_stack.pop() # coordinate position popped
             if retreived_coordinate:
-                entry_widget=self.cells[retreived_coordinate] # position retrieved
-                entry_widget.config(state="normal") # temporarily set the widget type to normal to allow 'delete'
+                entry_widget=self.cells[retreived_coordinate] # corresponding GUI widget found
+                entry_widget.config(state="normal") # temporarily sets the widget type to normal to allow 'delete'
                 entry_widget.delete(0, tkinter.END) # coordinate cleared
+                
+        except Exception as e:
+            messagebox.showerror("Undo Stack Error", f"An error ocurred when attempting to undo.\nDetails: {e}")
         finally:
             self.this_move_is_an_undo=False
 
 
-game=WelcomeWindow()
-game.mainloop()
+app=WelcomeWindow() # object of WelcomeWindow created - this is the initial welcome message pop-up
+app.mainloop()
