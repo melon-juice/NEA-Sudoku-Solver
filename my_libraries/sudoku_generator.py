@@ -1,5 +1,3 @@
-# imports random, converter_grid_format, and Sudoku_Solver_using_MRV
-
 import random # used to remove random cells from the solved grid
               # used to randomly substitute/swap numbers
 from .converter_grid_format import convert_grid
