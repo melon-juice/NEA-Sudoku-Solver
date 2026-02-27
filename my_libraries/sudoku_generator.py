@@ -5,11 +5,16 @@ import random # used to remove random cells from the solved grid
 from .converter_grid_format import convert_grid
 from .Sudoku_Solver_using_MRV import main as solve_sudoku_MRV # used to check grid is solveable
 
+# importing GridArchive text file using os module
+import os # used to find path to library files relative to working directory (resolving an issue I had with imports)
+library_directory=os.path.dirname(os.path.abspath(__file__))
+absolute_path_to_archive=os.path.join(library_directory, "SingleStringGridArchive.txt")
+
 def get_random_grid():
     """Gets a random grid from the archive and converts it to 2d list format"""
     try:
-        with open("./SingleStringGridArchive.txt", "r", encoding="utf-8") as file:
-            random_line="hello world"
+        with open(absolute_path_to_archive, "r", encoding="utf-8") as file:
+            random_line="hello world" # placeholder
             while len(random_line)!=81: # ensures the random line selected isn't simply a line break with no contents
                 random_line=random.choice(file.readlines()).strip() # random line selected
                 random_grid=convert_grid(random_line) # grid converted to 2d format

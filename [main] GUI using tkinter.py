@@ -20,36 +20,36 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
 
     def __init__(self):
         super().__init__()
-        self.title("Sudoku Solver")
+        self.title("Sudoku App")
         self.geometry("380x450")
         self.resizable(False, False)
-        self.create_menu()
-        self.validatecommand=(self.register(self.validate_number),"%P") # applies to all user inputs in the app
+        self.__create_menu()
+        self._validatecommand=(self.register(self._validate_number),"%P") # applies to all user inputs in the app
                                                                         # handles input validation using Tcl
                                                                         # the "%P" part stands for the expected result before validating
         
-    def validate_number(self, P): # input validation used consistently throughout the whole app
+    def _validate_number(self, P): # input validation used consistently throughout the whole app
         """Only allows a single digit in the inculsive range 1-9 OR an empty string"""
         if (P.isdigit() and len(P)==1 and P!="0") or P=="":
             return True
         else:
             return False
 
-    def show_frame(self, frame_name):
+    def _show_frame(self, frame_name):
         """Switches between frames by raising them to the top - used throughout the app to hide/show widgets"""
         frame=self.frames[frame_name]
         frame.tkraise() # frame is sent to the top, making it the frame that the user views
 
-    def create_menu(self):
+    def __create_menu(self):
         """dropdown elements: Home / Tutorial / Sudoku Tricks // Exit App"""
         self.menubar=tkinter.Menu(self)
         self.app_menu=tkinter.Menu(self.menubar, tearoff=0)
     
-        self.app_menu.add_command(label="Home", command=self.go_home)
-        self.app_menu.add_command(label="Tutorial", command=self.open_tutorial)
-        self.app_menu.add_command(label="About", command=self.open_about)
+        self.app_menu.add_command(label="Home", command=self._go_home)
+        self.app_menu.add_command(label="Tutorial", command=self._open_tutorial)
+        self.app_menu.add_command(label="About", command=self._open_about)
         self.app_menu.add_separator()
-        self.app_menu.add_command(label="Exit App", command=self.exit_app)
+        self.app_menu.add_command(label="Exit App", command=self._exit_app)
 
         self.menubar.add_cascade(label="Menu", menu=self.app_menu)
         self.config(menu=self.menubar)
@@ -57,27 +57,27 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
 
     """The following four methods (go_home,open_tutorial,open_about,exit_app) each handle when a user selects a menu option"""
 
-    def go_home(self):
+    def _go_home(self):
         if messagebox.askokcancel("Confirm", "Close current window?"):
             self.destroy()
             game=WelcomeWindow()
             game.mainloop()
 
-    def open_tutorial(self):
+    def _open_tutorial(self):
         TutorialPage=Tutorial()
         TutorialPage.mainloop()
 
-    def open_about(self):
+    def _open_about(self):
         AboutPage=About()
         AboutPage.mainloop()
 
-    def exit_app(self):
+    def _exit_app(self):
         if messagebox.askokcancel("Confirm", "Close app?"):
             self.destroy()
 
     """The following two methods (draw3x3grid,draw9x9grid) are used together to display a sudoku grid to the user"""
 
-    def draw3x3grid(self, container, cells_dict, row, column, bgcolour, grid):
+    def __draw3x3grid(self, container, cells_dict, row, column, bgcolour, grid):
         """displays a block of 9 cells"""
         for i in range(3):
             for j in range(3):
@@ -87,7 +87,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
                 # StringVar command tracks changes to the cell and in turn updates cells_dict(defined at the end of this method)
                 e=tkinter.Entry(container, width=5, bg=bgcolour, justify="center",
                                 textvariable=cell_value_var, validate="key", # validatecommand is triggered by the press key event
-                                validatecommand=self.validatecommand, borderwidth=2)
+                                validatecommand=self._validatecommand, borderwidth=2)
                 
                 if digit!=0: # number 1-9
                     e.insert(0, str(digit)) # digit added to UI display and made readonly
@@ -96,15 +96,14 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
                     if isinstance(container.master, GeneratedGame): # checks if the board is part of the generated game window
                         # this means the user has manually inserted a value, so the record_move method is called
                         # changes are stored, in case the user later presses 'undo'
-                        r_temp=row+i
-                        c_temp=column+j
-                        cell_value_var.trace_add("write", container.master.record_move(r_temp, c_temp, cell_value_var))
+                        cell_value_var.trace_add("write", lambda *args, row_temp=row+i, col_temp=column+j, cell_temp=cell_value_var:
+                                                container.master._record_move(row_temp, col_temp, cell_temp))
                         # 'write' mode means the event (in this case, record_move) is triggered when the field is modified
                 
                 e.grid(row=row+i, column=column+j, sticky="nsew", padx=1, pady=1, ipady=5) # updates the corresponding position within the user interface
                 cells_dict[(row+i,column+j)]=e # grid dictionary is updated
 
-    def draw9x9grid(self,container,cells_dict,grid=None):
+    def _draw9x9grid(self,container,cells_dict,grid=None):
         """displays a grid of 9 blocks - using draw3x3grid method (above).
         The parameter 'container' is passed in to determine the correct frame to draw into.
         If a grid is passed in, it will be displayed, otherwise an empty grid is displayed."""
@@ -129,14 +128,14 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         colour="#e3e3e3"
         for rowNo in range(0,9,3):
             for colNo in range(0,9,3):
-                self.draw3x3grid(container, cells_dict, rowNo, colNo, colour, grid) # relevant paramteters are passed into 3x3 block drawer
+                self.__draw3x3grid(container, cells_dict, rowNo, colNo, colour, grid) # relevant paramteters are passed into 3x3 block drawer
                 # background colour switched to visually show where blocks begin/end
                 if colour=="#e3e3e3":
                     colour="#bababa"
                 else:
                     colour="#e3e3e3"
 
-    def get_board(self,cells_dict):
+    def _get_board(self,cells_dict):
         """Returns the current state of the GUI board as a 2D list, ready for solving."""
         board=[]
         for row in range(9):
@@ -149,17 +148,16 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
                     row_temp.append(int(digit))
             board.append(row_temp)
         return board
-    
 
     """The following two methods (open_SolverWindow,open_GameWindow) are called if the user selects "play sudoku" or "solve my puzzle".
     Each method creates an object of the appropriate class to open a new window, and closes down the welcome window."""
 
-    def open_SolverWindow(self):
+    def _open_SolverWindow(self):
         self.destroy()
         SudokuSolverApp=SolverWindow()
         SudokuSolverApp.mainloop()
 
-    def open_GameWindow(self):
+    def _open_GameWindow(self):
         self.destroy()
         SudokuGameApp=GameWindow()
         SudokuGameApp.mainloop()
@@ -173,34 +171,47 @@ class WelcomeWindow(CreateApp):
 
     def __init__(self):
         super().__init__()
-        self.title("Home")
+        self.title("Sudoku App: Home")
         self.geometry("320x250")
         tkinter.Label(self, text="Welcome to the Sudoku App", font=("Consolas", 14, "bold"), fg="#008B7B").pack(pady=15)
-        tkinter.Button(self, text="Play Sudoku", bg="light grey", command=self.open_GameWindow, width=15, height=2).pack(pady=10)
-        tkinter.Button(self, text="Solve my puzzle", bg="light grey", command=self.open_SolverWindow, width=15, height=2).pack(pady=10)
+        tkinter.Button(self, text="Play Sudoku", bg="light grey", command=self._open_GameWindow, width=15, height=2).pack(pady=10)
+        tkinter.Button(self, text="Solve my puzzle", bg="light grey", command=self._open_SolverWindow, width=15, height=2).pack(pady=10)
         tkinter.Label(self, text="Select an option to get started!").pack(padx=20, pady=20)
+
 
 class About(CreateApp):
     """This window is opened if the drop-down menu option 'About' is selected. Contains a few simple widgets."""
     
     def __init__(self):
         super().__init__()
+        self.title("Sudoku App: About")
         self.geometry("320x250")
         tkinter.Label(self, text="About this App", font=("Consolas",12,"bold")).pack(pady=20)
         my_text="""This app was developed by Hajar Elkhatib\nfor an A-level Computer Science NEA.\nStarted: November 2025\nCompleted: February 2026"""
         tkinter.Label(self, text=my_text).pack()
+
 
 class Tutorial(CreateApp):
     """This window is opened if the drop-down menu option 'Tutorial' is selected."""
 
     def __init__(self):
         super().__init__()
-        self.geometry("320x250")
-        tkinter.Label(self, text="How to Play Sudoku", font=("Consolas",12,"bold")).pack(pady=20)
-        my_text="""This is a tutorial on how to play sudoku..."""
-        tkinter.Label(self, text=my_text).pack()
+        self.title("Sudoku App: Tutorial")
+        self.geometry("375x290")
+
+        tkinter.Label(self, text="What is Sudoku?", font=("Consolas",12)).pack(pady=10)
+        paragraph_one="""Sudoku is a logic-based number-placement puzzle.\nThe objective is to fill the 9x9 grid so that each row,
+each column, and each 3×3 block contains all digits\nfrom 1 to 9 (inclusive) exactly once."""
+        tkinter.Label(self, text=paragraph_one).pack()
+
+        tkinter.Label(self, text="This app contains:", font=("Consolas",12)).pack(pady=10)
+        paragraph_two="""\u2605 Solver: input an unsolved puzzle and find its solution
+\u2605 Game: play sudoku at 3 different difficulty levels"""
+        tkinter.Label(self, text=paragraph_two).pack()
+
         tkinter.Button(self, text="I'm ready to play a puzzle!", width=25, height=2, bg="light grey",
-                       command=self.open_GameWindow).pack(pady=15)
+                       command=self._open_GameWindow).pack(pady=20)
+        
 
 class SolverWindow(CreateApp): # inherits from parent (CreateApp)
     """
@@ -221,27 +232,26 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
     
     def __init__(self):
         super().__init__()
-        self.cells={}
-        self.display_runtime_bool=tkinter.IntVar() # boolean variable which monitors whether the 'display runtime' checkbox is checked
+        self.title("Sudoku Solver")
+        self.__display_runtime_bool=tkinter.IntVar() # boolean variable which monitors whether the 'display runtime' checkbox is checked
+        tkinter.Label(self, text="Sudoku Solver", font=("Consolas",12)).grid(row=0, column=0, columnspan=2, pady=15)
 
-        self.header=tkinter.Label(self, text="Sudoku Solver", font=("Consolas",12))
-        self.header.grid(row=0, column=0, columnspan=2, pady=15)
-
-        self.grid_frame=tkinter.Frame(self) # initailaises grid_frame, where the grid will be placed
-        self.grid_frame.grid(row=1, column=0, padx=20, pady=5)
-        self.draw9x9grid(self.grid_frame,self.cells)
+        self.__grid_frame=tkinter.Frame(self) # initailaises grid_frame, where the grid will be placed (private)
+        self.__grid_frame.grid(row=1, column=0, padx=20, pady=5)
+        self._cells={}
+        self._draw9x9grid(self.__grid_frame, self._cells)
 
         # the following creates the 'display runtime' checkbox and solve button
-        tkinter.Checkbutton(self, text="Display runtime", variable=self.display_runtime_bool, width=15, height=2).place(x=220, y=380)
-        tkinter.Button(self, text="Clear", bg="light grey", command=lambda: self.draw9x9grid(self.grid_frame, self.cells),
+        tkinter.Checkbutton(self, text="Display runtime", variable=self.__display_runtime_bool, width=15, height=2).place(x=220, y=380)
+        tkinter.Button(self, text="Clear", bg="light grey", command=lambda: self._draw9x9grid(self.__grid_frame, self._cells),
                        width=10, height=2).place(x=30, y=380)
-        tkinter.Button(self, text="Test for\nSolutions", bg="turquoise", command=self.solve_grid, width=10, height=2).place(x=130, y=380)
+        tkinter.Button(self, text="Test for\nSolutions", bg="turquoise", command=self._solve_grid, width=10, height=2).place(x=130, y=380)
 
-    def solve_grid(self):
+    def _solve_grid(self):
         """Uses parent method get_board to read user input & uses MRV solver library to find solutions. 
         (The result of pressing the "Solve" button)"""
 
-        current_board=self.get_board(self.cells)
+        current_board=self._get_board(self._cells)
 
         # the following structure counts the number of filled fields in the board
         zeroes_list=0 
@@ -275,19 +285,19 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
             return
         
         # solution(s) found
-        if self.display_runtime_bool.get()==1: # "display runtime" box is checked
+        if self.__display_runtime_bool.get()==1: # "display runtime" box is checked
             messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}\nTime elapsed: {elapsed_time:.3f} seconds")
         else:
             messagebox.showinfo("Solution found!",f"\nTotal solutions found: {len(solutions_list)}")
 
-        self.draw9x9grid(self.grid_frame, self.cells, solutions_list[0]) # first solution displayed in the solver window
-        for cell_widget in self.cells.values(): 
+        self._draw9x9grid(self.__grid_frame, self._cells, solutions_list[0]) # first solution displayed in the solver window
+        for cell_widget in self._cells.values(): 
             cell_widget.config(state="readonly") # makes the whole board read-only
 
         if len(solutions_list)>1: # The puzzle has more than one solution: the user is given the choice to view each one.
             for solution in solutions_list[1:]:
                 if messagebox.showinfo("Multiple Solutions", "This puzzle has multiple solutions. Would you like to see the next one?"):
-                    self.draw9x9grid(self.grid_frame, self.cells, solution) # next solution is displayed
+                    self._draw9x9grid(self.__grid_frame, self._cells, solution) # next solution is displayed
         
         else: # grid has one unique solution
 
@@ -331,7 +341,7 @@ class GameWindow(CreateApp):
         super().__init__()
         self.title("Sudoku Game") # window title from parent class is overwritten
         
-        # a container is initialised to hold all frames within the game window
+        # container is initialised to dynamically hold all frames within the game window
         container=tkinter.Frame(self)
         container.pack(fill="both", expand=True) # container expanded to fill the whole window
         container.grid_columnconfigure(0, weight=1) # contents of the contianer are centred
@@ -339,69 +349,70 @@ class GameWindow(CreateApp):
         self.frames={} # all frames are managed in a dictionary
 
         # each frame is initialised and stored
-        for F in (OptionsScreen,GeneratedGame):
+        for F in (OptionsScreen, GeneratedGame):
             page_name=F.__name__  # retreives the string "OptionsScreen", etc.
             frame=F(parent=container, controller=self)
             self.frames[page_name]=frame # frame is stored in dictionary
             frame.grid(row=0, column=0, sticky="nsew") # the frame is placed in GUI grid (this line is necessary)
-       
-        self.show_frame("OptionsScreen") # the diffculty options page is placed at the top
+        self._show_frame("OptionsScreen") # the diffculty options page is placed at the top
 
-    def change_size(self, size_string):
+    def _change_size(self, size_string):
         """Resizes window for switching between frames"""
         self.resizable(True, True) # temporarily allows resizing (in both x and y directions)
         self.geometry(size_string)
         self.resizable(False, False) # window dimensions are locked again
     
+
 class OptionsScreen(tkinter.Frame): # inherits frame
     
     def __init__(self, parent, controller):
         super().__init__(parent)
-        self.controller=controller
-        self.controller.change_size("380x300")
+        self._controller=controller
+        self._controller._change_size("380x300")
 
         tkinter.Label(self, text="Select Difficulty:", font=("Consolas",12)).pack(pady=10)
         for level in ("easy","medium","hard"):
             level_button=tkinter.Button(self, text=level.title(), width=10, height=2, bg="light grey",
-                    command=lambda: self.begin_game(level)) # lambda function executes begin_game when button is pressed 
+                    command=lambda: self.__begin_game(level)) # lambda function executes begin_game when button is pressed 
             level_button.pack(padx=20, pady=10)
 
         tkinter.Label(self, text="Note that loading the puzzle may take a moment.").pack(pady=10)
 
-    def begin_game(self, difficulty_level):
+    def __begin_game(self, difficulty_level):
         try:
             generated_grid=generate_sudoku(difficulty_level) # sudoku puzzle generated using logic stored in library
-            game_frame=self.controller.frames["GeneratedGame"]
+            game_frame=self._controller.frames["GeneratedGame"]
             game_frame.starting_grid=generated_grid # saves the generated puzzle for future retrieval
-            self.controller.draw9x9grid(game_frame.grid_container, game_frame.cells, generated_grid) # puzzle displayed
+            self._controller._draw9x9grid(game_frame.grid_container, game_frame._cells, generated_grid) # puzzle displayed
             game_frame.grid_container.pack(padx=20)
-            self.controller.change_size("380x480")
-            self.controller.show_frame("GeneratedGame") # this frame is raised, hiding the difficulties options frame
-            self.controller.start_time=time.time() # timer begins
+            self._controller._change_size("380x480")
+            self._controller._show_frame("GeneratedGame") # this frame is raised, hiding the difficulties options frame
+            self._controller.start_time=time.time() # timer begins
            
         except Exception as e:
             messagebox.showerror("Error", f"Could not generate puzzle.\nDetails: {e}") 
+
 
 class GeneratedGame(tkinter.Frame): # inherits frame
     
     def __init__(self,parent,controller):
         super().__init__(parent)
-        self.controller=controller
-        self.cells={} # initialised grid - this will be filled by draw9x9grid
-        self.undo_stack=undo_stack.Stack() # uses stack library to initialise undo stack
-        self.this_move_is_an_undo=False
+        self._controller=controller
+        self._cells={} # initialised grid - this will be filled by draw9x9grid
+        self.__undo_stack=undo_stack.Stack() # uses stack library to initialise undo stack
+        self.__this_move_is_an_undo=False
 
         """The Generated game page has 3 main sections:
         > header_frame: contains return button to switch frames, and some simple text
-        > grid_container: generated puzzle goes here
+        > grid_container: where generated puzzle goes
         > button_frame: contains buttons at the bottom of the screen to: undo / clear / check answer
         These sections are initialised seperately and hold widgets independently. This allows for easier formatting and debugging."""
-        
+
         header_frame=tkinter.Frame(self)
         header_frame.pack(fill="x", pady=20)
 
         tkinter.Button(header_frame, text="<- Return to difficulties", width=20, height=1,
-                       command=lambda:[self.controller.change_size("380x320"), controller.show_frame("OptionsScreen")]
+                       command=lambda:[self._controller._change_size("380x320"), controller._show_frame("OptionsScreen")]
                        ).pack(side="left", padx=20)
         tkinter.Label(header_frame, text="Try solving this!", font=("Consolas",12)).pack(side="left")
         
@@ -411,12 +422,12 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         button_frame=tkinter.Frame(self)
         button_frame.pack(padx=20, pady=20, fill="x")
 
-        tkinter.Button(button_frame, text="Undo", bg="light grey", command=self.undo, width=10, height=2).pack(side="left", padx=10, expand=True)
-        tkinter.Button(button_frame, text="Clear Board", bg="light grey", command=lambda: self.controller.draw9x9grid(self.grid_container, self.cells, self.starting_grid),
+        tkinter.Button(button_frame, text="Undo", bg="light grey", command=self.__undo, width=10, height=2).pack(side="left", padx=10, expand=True)
+        tkinter.Button(button_frame, text="Clear Board", bg="light grey", command=lambda: self._controller._draw9x9grid(self.grid_container, self._cells, self.starting_grid),
                        width=10, height=2).pack(side="left", padx=10, expand=True)
-        tkinter.Button(button_frame, text="Check\nSolution", bg="turquoise", command=self.check_solution, width=10, height=2).pack(side="left", padx=10, expand=True)
+        tkinter.Button(button_frame, text="Check\nSolution", bg="turquoise", command=self.__check_solution, width=10, height=2).pack(side="left", padx=10, expand=True)
     
-    def solve_grid(self):
+    def _solve_grid(self):
         """Solves the generated puzzle to get the solution (used in check_solution to compare against the user's answer)
         This is a massively simplified version of the solve_grid method in the SolverWindow class."""
     
@@ -429,10 +440,10 @@ class GeneratedGame(tkinter.Frame): # inherits frame
             return
         return solutions_list[0]
 
-    def check_solution(self):
+    def __check_solution(self):
         """Compares the user's input with the correct solution - which is found via the solve_grid method."""
         
-        current_board=self.controller.get_board(self.cells) # calls method from CreateApp to retrieve what the user has entered.
+        current_board=self._controller._get_board(self._cells) # calls method from CreateApp to retrieve what the user has entered.
         number_of_zeroes=0
         for row in current_board:
             for cell in row:
@@ -442,48 +453,49 @@ class GeneratedGame(tkinter.Frame): # inherits frame
             messagebox.showerror("Board Incomplete!", "Please fully input your answer before before attempting to check.")
             return
         
-        correct_solution=self.solve_grid() 
+        correct_solution=self._solve_grid() 
         # note: the way the sudoku generator works ensures the generated puzzle has one unique solution, so we don't need to worry about multiple vaild solutions.
         if current_board==correct_solution:
-            time_elapsed=time.time()-self.controller.start_time # the user's solve time is calculated
+            time_elapsed=time.time()-self._controller.start_time # the user's solve time is calculated
             formatted_time=time.strftime("%M:%S", time.gmtime(time_elapsed)) # time formatted to minutes and seconds
             messagebox.showinfo("Solution Correct!", f"Congratulations! You finished in {formatted_time}!\nNavigate back to difficulties to generate a new puzzle.")
             # the whole board is set to read-only
-            for cell_widget in self.cells.values():
+            for cell_widget in self._cells.values():
                 cell_widget.config(state="readonly")
         else:
             messagebox.showinfo("Solution Incorrect", f"That's not quite right.\nCheck your inputs and try again.")
-        
-    def record_move(self, row_index, column_index, cell_value_var):
+
+    def _record_move(self, row_index, column_index, cell_value_var):
         """This method is triggered whenever a change is detected in the board. It first checks that the current move being performed isn't an 'undo'.
         If ok, it pushes the coordinate where the change occurred onto the undo stack. This method makes no changes to the GUI."""
 
-        if self.this_move_is_an_undo:
+        if self.__this_move_is_an_undo:
             return # ensures that the 'undo' move isn't pushed onto the stack
         
         value=cell_value_var.get()
         if value!="":
-            self.undo_stack.push((row_index, column_index)) # saves the coordinate where the change was made, so it can be cleared later
+            self.__undo_stack.push((row_index, column_index)) # saves the coordinate where the change was made, so it can be cleared later
+            #print(f"Recorded move at {row_index}, {column_index}") # for tracing the stack and debugging
 
-    def undo(self):
+    def __undo(self):
         """Checks that the current move being performed isn't an 'undo'. If ok, it pops the last updated coordinate from the undo_stack.
         The corresponding cell is cleared, and the user display is updated."""
 
-        if self.undo_stack.isEmpty():
+        if self.__undo_stack.isEmpty():
             return
         
-        self.this_move_is_an_undo=True
+        self.__this_move_is_an_undo=True
         try:
-            retreived_coordinate=self.undo_stack.pop() # coordinate position popped
+            retreived_coordinate=self.__undo_stack.pop() # coordinate position popped
             if retreived_coordinate:
-                entry_widget=self.cells[retreived_coordinate] # corresponding GUI widget found
-                entry_widget.config(state="normal") # temporarily sets the widget type to normal to allow 'delete'
+                entry_widget=self._cells[retreived_coordinate] # corresponding GUI widget found
+                entry_widget.config(state="normal") # temporarily sets the widget type to normal to allow .delete()
                 entry_widget.delete(0, tkinter.END) # coordinate cleared
-                
+
         except Exception as e:
             messagebox.showerror("Undo Stack Error", f"An error ocurred when attempting to undo.\nDetails: {e}")
         finally:
-            self.this_move_is_an_undo=False
+            self.__this_move_is_an_undo=False
 
 
 app=WelcomeWindow() # object of WelcomeWindow created - this is the initial welcome message pop-up

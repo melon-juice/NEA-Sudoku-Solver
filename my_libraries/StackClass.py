@@ -1,4 +1,3 @@
-
 class Stack:
     """ Stack class used to stack up edits. When undo is pressed, the stack is popped to undo the last change"""
 
