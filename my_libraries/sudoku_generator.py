@@ -16,31 +16,32 @@ def get_random_grid():
             while len(random_line)!=81: # ensures the random line selected isn't simply a line break with no contents
                 random_line=random.choice(file.readlines()).strip() # random line selected
                 random_grid=convert_grid(random_line) # grid converted to 2d format
-            
-        random_solved_grid=solve_sudoku_MRV(random_grid)[0] # attempts to solve grid. If the imported content was corrupted, this line will raise an exception
+
+        # the following line attempts to solve. If the imported content was corrupted, this line will raise an exception
+        random_solved_grid=solve_sudoku_MRV(random_grid)[0]
         return random_solved_grid
     
     except Exception as e:
         print("Error encountered:",e)
 
 def number_shuffle(grid):
-    """Each number in the input grid is swapped with a random number 1-9 (it may be kept the same)
-    This is done to make the grid feel slightly different to the human user"""
+    """Each number in the input grid is swapped with a random number 1-9 (or may be kept the same)
+    This is done to make the grid feel slightly different to the human user."""
 
     old_list=[1, 2, 3, 4, 5, 6, 7, 8, 9]
     new_list=random.sample(old_list,k=9) # new_list is a different shuffle each time. eg: [6, 1, 9, 4, 8, 5, 2, 7, 3]
 
     for row_index in range(9):
         for col_index in range(9):
-            
             digit=grid[row_index][col_index]
             if digit!=0:
-                new_num=new_list[old_list.index(digit)]
+                new_num=new_list[old_list.index(digit)] # links the index positions of the two lists to find the new shuffled version
                 grid[row_index][col_index]=new_num # swaps old number with corresponding new number
     return grid
 
 def generate_sudoku(full_grid, difficulty="easy"):
-    """Random cells are removed from the sudoku grid until it has as few digits as possible whislt still having exactly 1 solution."""
+    """Random cells are removed from the sudoku grid until it has as few digits as possible whislt still having exactly 1 solution.
+    Default difficulty level is 'easy'."""
 
     if difficulty=="easy":
         iterations=43
@@ -62,9 +63,8 @@ def generate_sudoku(full_grid, difficulty="easy"):
 
         grid[row][column]=0 # this coordinate is switched for an empty cell
 
-        solutions=solve_sudoku_MRV(grid)
+        solutions=solve_sudoku_MRV(grid) # attempts to find solution(s)
         if len(solutions)!=1: # sudoku no longer valid
-            #print("Not solveable, iteration no.",i) # used for debugging
             grid[row][column]=num_temp # cell is changed back
             iterations+=1 # iterations is incremented again
 
@@ -72,6 +72,6 @@ def generate_sudoku(full_grid, difficulty="easy"):
     return grid
 
 def main(difficulty_level):
-    """retrieves a random unsolved sudoku from the grid archive and manipulates it to generate a fresh, new grid"""
+    """retrieves a random unsolved sudoku from the grid archive and manipulates it to generate a new unsolved puzzle."""
     grid=get_random_grid()
     return generate_sudoku(grid, difficulty_level)
