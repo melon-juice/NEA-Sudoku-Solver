@@ -74,7 +74,6 @@ def dfs_solution_finder(grid):
             
             grid[row_index][col_index]=i # the algorithm commits a change for the cell specified by the MRV_cell() function
             dfs_solution_finder(grid) # recursive call
-
             grid[row_index][col_index]=0 # cell set to empty again (backtracking occurs)
     
 def main(sudoku_grid): # external input here
@@ -83,19 +82,3 @@ def main(sudoku_grid): # external input here
     dfs_solution_finder(sudoku_grid)
     solved_grids=pickle.load(open(absolute_path_to_solutions_list, "rb"))
     return solved_grids
-    
-#         print(len(solved_grids))
-#         for grid in solved_grids:
-#             for line in grid:
-#                 print(line)
-#             print("...")
-    
-# main([[5,0,1,0,7,2,0,0,0],
-# [6,0,9,0,0,0,0,0,0],
-# [8,0,7,5,4,0,6,0,3],
-# [4,9,6,0,0,7,8,0,0],
-# [0,0,3,0,0,4,0,0,6],
-# [2,1,0,0,9,0,0,4,0],
-# [0,6,0,0,0,0,0,0,8],
-# [0,0,5,0,6,3,4,2,9],
-# [0,0,4,0,2,8,5,6,1]])

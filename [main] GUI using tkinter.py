@@ -185,7 +185,7 @@ class About(CreateApp):
     def __init__(self):
         super().__init__()
         self.title("Sudoku App: About")
-        self.geometry("320x250")
+        self.geometry("300x180")
         tkinter.Label(self, text="About this App", font=("Consolas",12,"bold")).pack(pady=20)
         my_text="""This app was developed by Hajar Elkhatib\nfor an A-level Computer Science NEA.\nStarted: November 2025\nCompleted: February 2026"""
         tkinter.Label(self, text=my_text).pack()
@@ -373,7 +373,7 @@ class OptionsScreen(tkinter.Frame): # inherits frame
         tkinter.Label(self, text="Select Difficulty:", font=("Consolas",12)).pack(pady=10)
         for level in ("easy","medium","hard"):
             level_button=tkinter.Button(self, text=level.title(), width=10, height=2, bg="light grey",
-                    command=lambda: self.__begin_game(level)) # lambda function executes begin_game when button is pressed 
+                    command=lambda lvl=level: self.__begin_game(lvl)) # lambda function executes begin_game when button is pressed 
             level_button.pack(padx=20, pady=10)
 
         tkinter.Label(self, text="Note that loading the puzzle may take a moment.").pack(pady=10)

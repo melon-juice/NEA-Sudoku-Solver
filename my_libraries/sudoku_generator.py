@@ -53,7 +53,6 @@ def generate_sudoku(full_grid, difficulty="easy"):
     grid=full_grid # a copy is made in case the algorithm needs to reference / revert to the full grid
 
     for i in range(iterations):
-
         num_temp=0
         # generate random coordinates
         while num_temp==0:
