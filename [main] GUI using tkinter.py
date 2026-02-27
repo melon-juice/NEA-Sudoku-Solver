@@ -27,7 +27,7 @@ class CreateApp(tkinter.Tk): # equivalent of using root=tkinter.Tk()
         self._validatecommand=(self.register(self._validate_number),"%P") # applies to all user inputs in the app
                                                                         # handles input validation using Tcl
                                                                         # the "%P" part stands for the expected result before validating
-        
+    
     def _validate_number(self, P): # input validation used consistently throughout the whole app
         """Only allows a single digit in the inculsive range 1-9 OR an empty string"""
         if (P.isdigit() and len(P)==1 and P!="0") or P=="":
