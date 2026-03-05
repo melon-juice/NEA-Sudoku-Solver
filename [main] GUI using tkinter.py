@@ -411,7 +411,7 @@ class GeneratedGame(tkinter.Frame): # inherits frame
         header_frame=tkinter.Frame(self)
         header_frame.pack(fill="x", pady=20)
 
-        tkinter.Button(header_frame, text="<- Return to difficulties", width=20, height=1,
+        tkinter.Button(header_frame, text="\u21FD Return to difficulties", width=20, height=1,
                        command=lambda:[self._controller._change_size("380x320"), controller._show_frame("OptionsScreen")]
                        ).pack(side="left", padx=20)
         tkinter.Label(header_frame, text="Try solving this!", font=("Consolas",12)).pack(side="left")
