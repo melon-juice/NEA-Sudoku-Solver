@@ -12,7 +12,7 @@ data = {
 print("Number of data items:", len(data["Blanks"]))
 df=pd.DataFrame(data)
 
-plot_data=df.groupby("Blanks").mean() ### defines plot_data, formatting the graph
+plot_data=df.groupby("Blanks").mean() # defines plot_data as a grouped graph
  
 #[Normal Edits (Light Red), Normal Backtracks (Dark Red), MRV Edits (Light Blue), MRV Backtracks (Dark Blue)]
 ax=plot_data.plot(kind="bar", figsize=(12,6), width=0.8, color=["#ff9999", "#cc0000", "#99ccff", "#004c99"])

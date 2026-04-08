@@ -114,7 +114,7 @@ def dfs_solution_finder(grid, edits_counter, backtracks_counter, solved_grids): 
     
 def main():
     """calls dfs_solution_finder()"""
-    sudoku_grid=SudokuGrids(9)
+    sudoku_grid=SudokuGrids(13)
     UnicodeDisplay(sudoku_grid)
 
     solutions_list=[]
@@ -123,7 +123,7 @@ def main():
 
     dfs_solution_finder(sudoku_grid, edits_counter, backtracks_counter, solutions_list)
 
-    print("This grid has",blank_cells_counter(sudoku_grid),"blank cells.")
+    #print("This grid has",blank_cells_counter(sudoku_grid),"blank cells.")
     print(edits_counter[0],"edits were made, and",backtracks_counter[0],"backtracks were made.")
     if len(solutions_list)==0:
         print("No Solutions were found for this puzzle!")

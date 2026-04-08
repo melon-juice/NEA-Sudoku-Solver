@@ -13,6 +13,10 @@ def number_shuffle(grid):
     old_list=[1, 2, 3, 4, 5, 6, 7, 8, 9]
     new_list=random.sample(old_list,k=9) # new_list is a different shuffle each time. eg: [6, 1, 9, 4, 8, 5, 2, 7, 3]
 
+    print("\n\tEach            ",old_list)
+    print("\tIs replaced with",new_list,"\n")
+
+
     for row_index in range(9):
         for col_index in range(9):
             
@@ -32,6 +36,7 @@ def generate_sudoku(full_grid, difficulty):
         iterations=random.randint(44,52)
     elif difficulty=="hard":
         iterations=random.randint(53,59)
+    #print(f"There are {iterations} blank cells.")
 
     grid=full_grid # a copy is made in case the algorithm needs to reference / revert to the full grid
 
@@ -51,8 +56,7 @@ def generate_sudoku(full_grid, difficulty):
             #print("Not solveable, iteration no.",i) # used for debugging
             grid[row][column]=num_temp # cell is changed back
             iterations+=1 # iterations is incremented again
-
-    grid=number_shuffle(grid)
+            
     return grid
 
 ##def main():
@@ -62,15 +66,15 @@ def generate_sudoku(full_grid, difficulty):
 ##    return generate_sudoku(grid,"easy")
 
 # remove the following: it is just for debugging
+
 archive_num=random.randint(3,25)
 random_unsolved_grid=SudokuGrids(archive_num)
 grid=solve_sudoku_MRV(random_unsolved_grid)[0] # retrieves a random unsolved sudoku from my grid archive and solves it
-print(f"Original: number {archive_num} in archive.")
-UnicodeDisplay(grid)
 
-for i in range(3):
-    print("To solve:")
-    UnicodeDisplay(generate_sudoku(grid,"easy"))
+print("\nBefore Number Shuffle:")
+new=generate_sudoku(grid,"easy")
+UnicodeDisplay(new)
 
-
-
+print("\nAfter Number Shuffle:")
+shuffled=number_shuffle(new)
+UnicodeDisplay(shuffled)

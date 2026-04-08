@@ -380,7 +380,7 @@ class OptionsScreen(tkinter.Frame): # inherits frame
 
     def __begin_game(self, difficulty_level):
         try:
-            generated_grid=generate_sudoku(difficulty_level) # sudoku puzzle generated using logic stored in library
+            generated_grid=generate_sudoku(difficulty_level) # sudoku puzzle generated using logic stored in library                
             game_frame=self._controller.frames["GeneratedGame"]
             game_frame.starting_grid=generated_grid # saves the generated puzzle for future retrieval
             self._controller._draw9x9grid(game_frame.grid_container, game_frame._cells, generated_grid) # puzzle displayed

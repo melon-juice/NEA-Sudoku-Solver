@@ -62,7 +62,7 @@ def dfs_solution_finder(grid, edits_counter, backtracks_counter, solved_grids): 
 def main():
     """calls dfs_solution_finder()"""
     
-    sudoku_grid=SudokuGrids(18)
+    sudoku_grid=SudokuGrids(13)
     print("You entered:")
     UnicodeDisplay(sudoku_grid)
     solutions_list=[]
@@ -78,5 +78,4 @@ def main():
         for solution in solutions_list:
             UnicodeDisplay(solution)
     
-
 main()

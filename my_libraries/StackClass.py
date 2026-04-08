@@ -18,7 +18,7 @@ class Stack:
         return False
 
     def push(self,data):
-        if self.isFull:
+        if not self.isFull():
             self.tosp+=1
             self.s[self.tosp]=data
             self.size+=1
