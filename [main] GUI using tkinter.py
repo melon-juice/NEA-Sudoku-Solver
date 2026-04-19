@@ -269,7 +269,7 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
         solutions_list=[] # created so that if the solver fails, a "solutions_list not defined" error does not occur
         start_time=time.time() # timer begins
         try:
-            solutions_list=func_timeout(4, solve_sudoku_MRV,args=(current_board,)) # solve library called, with timeout after 4 seconds
+            solutions_list=func_timeout( 4, solve_sudoku_MRV, args=(current_board,)) # solve library called, with timeout after 4 seconds
             # a comma is added here to tell func_timeout not to unpack the array ↑
             
             # if the algorithm reaches this part of the code, it means a timeout did not occur and the solver algorithm was successful                                                                         
@@ -311,7 +311,7 @@ class SolverWindow(CreateApp): # inherits from parent (CreateApp)
                     for file_line in file.readlines():
                         file_line=file_line.strip()
                         if single_line==file_line:
-                            already_in_file==True # this means the grid won't be added to the archive
+                            already_in_file=True # this means the grid won't be added to the archive
                     file.close()
 
                 if not already_in_file:
